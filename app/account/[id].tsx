@@ -11,6 +11,13 @@ import {
   View,
 } from 'react-native';
 
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function AccountDetailScreen() {
   const { id } = useLocalSearchParams();
 
@@ -140,7 +147,7 @@ export default function AccountDetailScreen() {
 
       <View style={styles.balanceCard}>
         <Text style={styles.label}>ACCOUNT BALANCE</Text>
-        <Text style={styles.balance}>${account.balance.toFixed(2)}</Text>
+        <Text style={styles.balance}>${formatMoney(account.balance)}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>History</Text>
@@ -155,7 +162,7 @@ export default function AccountDetailScreen() {
             </Text>
             <Text style={styles.transactionAmount}>
               {getTransactionAmountPrefix(transaction)}
-              ${transaction.amount.toFixed(2)}
+              ${formatMoney(transaction.amount)}
             </Text>
           </View>
         ))

@@ -8,6 +8,13 @@ import {
   View,
 } from 'react-native';
 
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function AccountsScreen() {
   const accounts = useStashStore((state) => state.accounts);
 
@@ -43,9 +50,7 @@ export default function AccountsScreen() {
             <View style={styles.accountInfo}>
               <Text style={styles.accountName}>🏦 {account.name}</Text>
               <Text style={styles.accountType}>Tap to view details</Text>
-              <Text style={styles.balance}>
-                ${account.balance.toFixed(2)}
-              </Text>
+              <Text style={styles.balance}>${formatMoney(account.balance)}</Text>
             </View>
 
             <Text style={styles.chevron}>›</Text>

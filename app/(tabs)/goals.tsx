@@ -10,6 +10,13 @@ import {
   View,
 } from 'react-native';
 
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function GoalsScreen() {
   const envelopes = useStashStore((state) => state.envelopes);
   const editEnvelopeGoal = useStashStore((state) => state.editEnvelopeGoal);
@@ -20,7 +27,7 @@ export default function GoalsScreen() {
   const handleSaveGoal = (envelopeId: string) => {
     const goalAmount = Number(goalAmountInput);
 
-    if (!goalAmount || goalAmount < 0) {
+    if (!goalAmount || goalAmount <= 0) {
       Alert.alert('Enter a valid goal amount');
       return;
     }
@@ -28,6 +35,28 @@ export default function GoalsScreen() {
     editEnvelopeGoal(envelopeId, goalAmount);
     setEditingGoalId('');
     setGoalAmountInput('');
+  };
+
+  const handleDeleteGoal = (envelopeId: string, envelopeName: string) => {
+    Alert.alert(
+      'Delete Goal?',
+      `Remove the goal from ${envelopeName}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            editEnvelopeGoal(envelopeId, 0);
+            setEditingGoalId('');
+            setGoalAmountInput('');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -60,11 +89,11 @@ export default function GoalsScreen() {
 
                   {hasGoal ? (
                     <Text style={styles.goalSubText}>
-                      ${envelope.balance.toFixed(2)} / ${goalAmount.toFixed(2)}
+                      ${formatMoney(envelope.balance)} / ${formatMoney(goalAmount)}
                     </Text>
                   ) : (
                     <Text style={styles.goalSubText}>
-                      ${envelope.balance.toFixed(2)} saved
+                      ${formatMoney(envelope.balance)} saved
                     </Text>
                   )}
                 </View>
@@ -103,6 +132,17 @@ export default function GoalsScreen() {
                   >
                     <Text style={styles.buttonText}>Save Goal</Text>
                   </TouchableOpacity>
+
+                  {hasGoal && (
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() =>
+                        handleDeleteGoal(envelope.id, envelope.name)
+                      }
+                    >
+                      <Text style={styles.deleteText}>Delete Goal</Text>
+                    </TouchableOpacity>
+                  )}
 
                   <TouchableOpacity
                     style={styles.cancelButton}
@@ -249,6 +289,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  deleteButton: {
+    backgroundColor: '#FFE5E5',
+    padding: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
   cancelButton: {
     backgroundColor: '#F5F5F5',
     padding: 14,
@@ -260,6 +308,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: '900',
     fontSize: 16,
+  },
+
+  deleteText: {
+    fontWeight: '900',
+    fontSize: 16,
+    color: '#B00020',
   },
 
   cancelText: {

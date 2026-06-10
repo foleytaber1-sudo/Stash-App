@@ -10,6 +10,13 @@ import {
 
 type TimeFrame = 'week' | 'month' | 'year';
 
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function BalanceScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
@@ -64,13 +71,13 @@ export default function BalanceScreen() {
 
       <View style={styles.summaryCard}>
         <Text style={styles.label}>TOTAL BALANCE</Text>
-        <Text style={styles.total}>${totalBalance.toFixed(2)}</Text>
+        <Text style={styles.total}>${formatMoney(totalBalance)}</Text>
 
         <Text style={styles.sub}>
-          Available To Stuff: ${availableToStuff.toFixed(2)}
+          Available To Stuff: ${formatMoney(availableToStuff)}
         </Text>
         <Text style={styles.sub}>
-          Stuffed In Envelopes: ${stuffedTotal.toFixed(2)}
+          Stuffed In Envelopes: ${formatMoney(stuffedTotal)}
         </Text>
       </View>
 
@@ -132,18 +139,18 @@ export default function BalanceScreen() {
 
         <View style={styles.flowRow}>
           <Text style={styles.flowLabel}>Money In</Text>
-          <Text style={styles.moneyIn}>+${moneyIn.toFixed(2)}</Text>
+          <Text style={styles.moneyIn}>+${formatMoney(moneyIn)}</Text>
         </View>
 
         <View style={styles.flowRow}>
           <Text style={styles.flowLabel}>Money Out</Text>
-          <Text style={styles.moneyOut}>-${moneyOut.toFixed(2)}</Text>
+          <Text style={styles.moneyOut}>-${formatMoney(moneyOut)}</Text>
         </View>
 
         <View style={styles.netRow}>
           <Text style={styles.netLabel}>Net</Text>
           <Text style={styles.netAmount}>
-            {net >= 0 ? '+' : '-'}${Math.abs(net).toFixed(2)}
+            {net >= 0 ? '+' : '-'}${formatMoney(Math.abs(net))}
           </Text>
         </View>
       </View>
@@ -160,7 +167,7 @@ export default function BalanceScreen() {
             </Text>
             <Text style={styles.transactionAmount}>
               {transaction.type === 'spend' ? '-' : '+'}$
-              {transaction.amount.toFixed(2)}
+              {formatMoney(transaction.amount)}
             </Text>
           </View>
         ))

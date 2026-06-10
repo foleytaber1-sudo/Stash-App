@@ -8,6 +8,13 @@ import {
   View,
 } from 'react-native';
 
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function HomeScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
@@ -23,11 +30,13 @@ export default function HomeScreen() {
         onPress={() => router.push('/activity')}
       >
         <Text style={styles.label}>TOTAL BALANCE</Text>
-        <Text style={styles.totalBalance}>${totalBalance.toFixed(2)}</Text>
+        <Text style={styles.totalBalance}>${formatMoney(totalBalance)}</Text>
 
         <View style={styles.availableBox}>
           <Text style={styles.availableLabel}>AVAILABLE TO STUFF</Text>
-          <Text style={styles.availableAmount}>${availableToStuff.toFixed(2)}</Text>
+          <Text style={styles.availableAmount}>
+            ${formatMoney(availableToStuff)}
+          </Text>
         </View>
       </TouchableOpacity>
 
@@ -82,13 +91,13 @@ export default function HomeScreen() {
                 </View>
 
                 <Text style={styles.envelopeBalance}>
-                  ${envelope.balance.toFixed(2)}
+                  ${formatMoney(envelope.balance)}
                 </Text>
 
                 {hasGoal && (
                   <View style={styles.goalSection}>
                     <Text style={styles.goalText}>
-                      ${envelope.balance.toFixed(2)} / ${goalAmount.toFixed(2)}
+                      ${formatMoney(envelope.balance)} / ${formatMoney(goalAmount)}
                     </Text>
 
                     <View style={styles.progressTrack}>

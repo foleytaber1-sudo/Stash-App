@@ -2,14 +2,21 @@ import { useStashStore } from '@/store/store';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+const formatMoney = (amount: number) => {
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 export default function EnvelopeScreen() {
   const { id } = useLocalSearchParams();
@@ -104,8 +111,8 @@ export default function EnvelopeScreen() {
   const handleDelete = () => {
     Alert.alert(
       'Delete Envelope?',
-      `This will delete ${envelope.name} and return $${envelope.balance.toFixed(
-        2
+      `This will delete ${envelope.name} and return $${formatMoney(
+        envelope.balance
       )} to Available To Stuff.`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -168,15 +175,15 @@ export default function EnvelopeScreen() {
 
       <View style={styles.balanceCard}>
         <Text style={styles.label}>ENVELOPE BALANCE</Text>
-        <Text style={styles.balance}>${envelope.balance.toFixed(2)}</Text>
+        <Text style={styles.balance}>${formatMoney(envelope.balance)}</Text>
         <Text style={styles.available}>
-          Available to Stuff: ${availableToStuff.toFixed(2)}
+          Available to Stuff: ${formatMoney(availableToStuff)}
         </Text>
 
         {hasGoal && (
           <View style={styles.goalSection}>
             <Text style={styles.goalText}>
-              Goal: ${envelope.balance.toFixed(2)} / ${goalAmount.toFixed(2)}
+              Goal: ${formatMoney(envelope.balance)} / ${formatMoney(goalAmount)}
             </Text>
 
             <View style={styles.progressTrack}>
@@ -260,7 +267,7 @@ export default function EnvelopeScreen() {
             <Text style={styles.transactionText}>{transaction.description}</Text>
             <Text style={styles.transactionAmount}>
               {transaction.type === 'spend' ? '-' : '+'}
-              ${transaction.amount.toFixed(2)}
+              ${formatMoney(transaction.amount)}
             </Text>
           </View>
         ))
