@@ -1,3 +1,4 @@
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -26,6 +27,9 @@ export default function ActivityScreen() {
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
   const deleteTransaction = useStashStore((state) => state.deleteTransaction);
+  const themeColor = useStashStore((state) => state.themeColor);
+
+  const theme = getTheme(themeColor);
 
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('month');
   const [selectedFilter, setSelectedFilter] = useState<TransactionFilter>('all');
@@ -137,10 +141,7 @@ export default function ActivityScreen() {
   };
 
   const handleSearchToggle = () => {
-    if (searchOpen) {
-      setSearchText('');
-    }
-
+    if (searchOpen) setSearchText('');
     setSearchOpen((current) => !current);
   };
 
@@ -176,7 +177,7 @@ export default function ActivityScreen() {
   const getTransactionCardStyle = (type: string) => {
     if (type === 'income') return styles.incomeCard;
     if (type === 'spend') return styles.spendCard;
-    if (type === 'stuff') return styles.stuffCard;
+    if (type === 'stuff') return { backgroundColor: theme.soft };
     if (type === 'transfer') return styles.transferCard;
     if (type === 'delete-envelope') return styles.deleteCard;
     if (type === 'delete-account') return styles.deleteCard;
@@ -210,23 +211,27 @@ export default function ActivityScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Activity</Text>
 
-      <View style={styles.summaryCard}>
+      <View
+        style={[
+          styles.summaryCard,
+          { backgroundColor: theme.button, borderColor: theme.accent },
+        ]}
+      >
         <Text style={styles.label}>ACTIVITY OVERVIEW</Text>
         <Text style={styles.total}>${formatMoney(totalBalance)}</Text>
 
-        <Text style={styles.sub}>
-          Available Cash: ${formatMoney(availableToStuff)}
-        </Text>
-        <Text style={styles.sub}>
-          Envelope Funds: ${formatMoney(stuffedTotal)}
-        </Text>
+        <Text style={styles.sub}>Available Cash: ${formatMoney(availableToStuff)}</Text>
+        <Text style={styles.sub}>Envelope Funds: ${formatMoney(stuffedTotal)}</Text>
       </View>
 
       <TouchableOpacity
-        style={styles.insightsButton}
+        style={[styles.insightsButton, { backgroundColor: theme.accent }]}
         onPress={() => router.push('/insights')}
       >
         <View>
@@ -239,41 +244,40 @@ export default function ActivityScreen() {
         <Text style={styles.insightsArrow}>›</Text>
       </TouchableOpacity>
 
-      <View style={styles.moneyFlowCard}>
+      <View style={[styles.moneyFlowCard, { backgroundColor: theme.soft }]}>
         <Text style={styles.cardTitle}>Money Flow</Text>
 
         <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, selectedTimeFrame === 'week' && styles.activeTab]}
-            onPress={() => setSelectedTimeFrame('week')}
-          >
-            <Text style={[styles.tabText, selectedTimeFrame === 'week' && styles.activeTabText]}>
-              Week
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, selectedTimeFrame === 'month' && styles.activeTab]}
-            onPress={() => setSelectedTimeFrame('month')}
-          >
-            <Text style={[styles.tabText, selectedTimeFrame === 'month' && styles.activeTabText]}>
-              Month
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, selectedTimeFrame === 'year' && styles.activeTab]}
-            onPress={() => setSelectedTimeFrame('year')}
-          >
-            <Text style={[styles.tabText, selectedTimeFrame === 'year' && styles.activeTabText]}>
-              Year
-            </Text>
-          </TouchableOpacity>
+          {(['week', 'month', 'year'] as TimeFrame[]).map((timeFrame) => (
+            <TouchableOpacity
+              key={timeFrame}
+              style={[
+                styles.tab,
+                selectedTimeFrame === timeFrame && {
+                  backgroundColor: theme.button,
+                },
+              ]}
+              onPress={() => setSelectedTimeFrame(timeFrame)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTimeFrame === timeFrame && {
+                    color: theme.accent,
+                  },
+                ]}
+              >
+                {timeFrame.charAt(0).toUpperCase() + timeFrame.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.flowRow}>
           <Text style={styles.flowLabel}>Money In</Text>
-          <Text style={styles.moneyIn}>+${formatMoney(moneyIn)}</Text>
+          <Text style={[styles.moneyIn, { color: theme.accent }]}>
+            +${formatMoney(moneyIn)}
+          </Text>
         </View>
 
         <View style={styles.flowRow}>
@@ -283,7 +287,7 @@ export default function ActivityScreen() {
 
         <View style={styles.netRow}>
           <Text style={styles.netLabel}>Net</Text>
-          <Text style={styles.netAmount}>
+          <Text style={[styles.netAmount, { color: net >= 0 ? theme.accent : '#B00020' }]}>
             {net >= 0 ? '+' : '-'}${formatMoney(Math.abs(net))}
           </Text>
         </View>
@@ -291,18 +295,14 @@ export default function ActivityScreen() {
 
       <Text style={styles.section}>Spending Breakdown</Text>
 
-      <View style={styles.breakdownCard}>
+      <View style={[styles.breakdownCard, { backgroundColor: theme.soft }]}>
         {spendingBreakdown.length === 0 ? (
-          <Text style={styles.breakdownEmpty}>
-            No spending for this time period yet.
-          </Text>
+          <Text style={styles.breakdownEmpty}>No spending for this time period yet.</Text>
         ) : (
           <>
             <View style={styles.breakdownTotalRow}>
               <Text style={styles.breakdownTotalLabel}>Total Spent</Text>
-              <Text style={styles.breakdownTotalAmount}>
-                ${formatMoney(totalSpent)}
-              </Text>
+              <Text style={styles.breakdownTotalAmount}>${formatMoney(totalSpent)}</Text>
             </View>
 
             {spendingBreakdown.map((item) => {
@@ -317,23 +317,19 @@ export default function ActivityScreen() {
                       <Text style={styles.breakdownName}>{item.name}</Text>
                     </View>
 
-                    <Text style={styles.breakdownAmount}>
-                      ${formatMoney(item.spent)}
-                    </Text>
+                    <Text style={styles.breakdownAmount}>${formatMoney(item.spent)}</Text>
                   </View>
 
                   <View style={styles.breakdownTrack}>
                     <View
                       style={[
                         styles.breakdownFill,
-                        { width: `${percent}%` },
+                        { width: `${percent}%`, backgroundColor: theme.accent },
                       ]}
                     />
                   </View>
 
-                  <Text style={styles.breakdownPercent}>
-                    {percent}% of spending
-                  </Text>
+                  <Text style={styles.breakdownPercent}>{percent}% of spending</Text>
                 </View>
               );
             })}
@@ -346,27 +342,26 @@ export default function ActivityScreen() {
 
         <View style={styles.historyActions}>
           <TouchableOpacity
-            style={[styles.searchButton, searchOpen && styles.searchButtonActive]}
+            style={[
+              styles.searchButton,
+              { backgroundColor: searchOpen ? theme.button : theme.soft },
+            ]}
             onPress={handleSearchToggle}
           >
-            <Text
-              style={[
-                styles.searchButtonText,
-                searchOpen && styles.searchButtonTextActive,
-              ]}
-            >
-              🔍
-            </Text>
+            <Text style={styles.searchButtonText}>🔍</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.moreButton, deleteMode && styles.moreButtonActive]}
+            style={[
+              styles.moreButton,
+              { backgroundColor: deleteMode ? theme.accent : theme.soft },
+            ]}
             onPress={() => setDeleteMode((current) => !current)}
           >
             <Text
               style={[
                 styles.moreButtonText,
-                deleteMode && styles.moreButtonTextActive,
+                { color: deleteMode ? '#FFFFFF' : '#111111' },
               ]}
             >
               ⋯
@@ -377,7 +372,7 @@ export default function ActivityScreen() {
 
       {searchOpen && (
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.soft }]}
           placeholder="Search transactions..."
           placeholderTextColor="#888888"
           value={searchText}
@@ -393,30 +388,30 @@ export default function ActivityScreen() {
         </Text>
       )}
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-      >
-        {filterOptions.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.filterChip,
-              selectedFilter === option.value && styles.activeFilterChip,
-            ]}
-            onPress={() => setSelectedFilter(option.value)}
-          >
-            <Text
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+        {filterOptions.map((option) => {
+          const isSelected = selectedFilter === option.value;
+
+          return (
+            <TouchableOpacity
+              key={option.value}
               style={[
-                styles.filterChipText,
-                selectedFilter === option.value && styles.activeFilterChipText,
+                styles.filterChip,
+                { backgroundColor: isSelected ? theme.accent : theme.soft },
               ]}
+              onPress={() => setSelectedFilter(option.value)}
             >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { color: isSelected ? '#FFFFFF' : theme.accent },
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
       {visibleTransactions.length === 0 ? (
@@ -446,12 +441,7 @@ export default function ActivityScreen() {
                 </View>
               )}
 
-              <View
-                style={[
-                  styles.transaction,
-                  getTransactionCardStyle(transaction.type),
-                ]}
-              >
+              <View style={[styles.transaction, getTransactionCardStyle(transaction.type)]}>
                 <View style={styles.transactionTopRow}>
                   <View style={styles.transactionIconBubble}>
                     <Text style={styles.transactionIcon}>
@@ -486,20 +476,27 @@ export default function ActivityScreen() {
           );
         })
       )}
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FFF4', padding: 20 },
+  container: { flex: 1, padding: 20 },
   title: { fontSize: 34, fontWeight: '900', marginTop: 60, marginBottom: 20 },
-  summaryCard: { backgroundColor: '#C8FF9B', borderRadius: 22, padding: 20 },
-  label: { fontSize: 13, fontWeight: '800' },
+
+  summaryCard: {
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 2,
+  },
+
+  label: { fontSize: 13, fontWeight: '900' },
   total: { fontSize: 42, fontWeight: '900', marginVertical: 8 },
   sub: { fontSize: 16, fontWeight: '700', marginTop: 6 },
 
   insightsButton: {
-    backgroundColor: '#111111',
     borderRadius: 22,
     padding: 18,
     marginTop: 16,
@@ -508,27 +505,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  insightsButtonTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '900',
-  },
-
-  insightsButtonSub: {
-    color: '#D7D7D7',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-
-  insightsArrow: {
-    color: '#FFFFFF',
-    fontSize: 42,
-    fontWeight: '300',
-  },
+  insightsButtonTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '900' },
+  insightsButtonSub: { color: '#F2F2F2', fontSize: 13, fontWeight: '700', marginTop: 4 },
+  insightsArrow: { color: '#FFFFFF', fontSize: 42, fontWeight: '300' },
 
   moneyFlowCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginTop: 16,
@@ -537,7 +518,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 14 },
 
   tabs: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 999,
     padding: 4,
     flexDirection: 'row',
@@ -551,9 +532,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  activeTab: { backgroundColor: '#C8FF9B' },
-  tabText: { fontWeight: '800', color: '#666' },
-  activeTabText: { color: '#000' },
+  tabText: { fontWeight: '900', color: '#666' },
 
   flowRow: {
     flexDirection: 'row',
@@ -563,11 +542,11 @@ const styles = StyleSheet.create({
 
   flowLabel: { fontSize: 17, fontWeight: '800' },
   moneyIn: { fontSize: 20, fontWeight: '900' },
-  moneyOut: { fontSize: 20, fontWeight: '900' },
+  moneyOut: { fontSize: 20, fontWeight: '900', color: '#B00020' },
 
   netRow: {
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
+    borderTopColor: 'rgba(0,0,0,0.08)',
     paddingTop: 14,
     marginTop: 4,
     flexDirection: 'row',
@@ -587,40 +566,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  sectionNoMargin: {
-    fontSize: 26,
-    fontWeight: '900',
-    flex: 1,
-  },
+  sectionNoMargin: { fontSize: 26, fontWeight: '900', flex: 1 },
 
-  historyActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  historyActions: { flexDirection: 'row', gap: 8 },
 
   searchButton: {
     width: 40,
     height: 40,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  searchButtonActive: {
-    backgroundColor: '#C8FF9B',
-  },
-
-  searchButtonText: {
-    fontSize: 18,
-  },
-
-  searchButtonTextActive: {
-    color: '#111111',
-  },
+  searchButtonText: { fontSize: 18 },
 
   searchInput: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
@@ -633,24 +593,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-  moreButtonActive: {
-    backgroundColor: '#111111',
   },
 
   moreButtonText: {
     fontSize: 30,
     fontWeight: '900',
-    color: '#111111',
     marginTop: -8,
-  },
-
-  moreButtonTextActive: {
-    color: '#FFFFFF',
   },
 
   deleteModeHint: {
@@ -663,7 +613,6 @@ const styles = StyleSheet.create({
   empty: { fontSize: 16, fontWeight: '700', color: '#666' },
 
   breakdownCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 18,
   },
@@ -681,19 +630,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  breakdownTotalLabel: {
-    fontSize: 18,
-    fontWeight: '900',
-  },
+  breakdownTotalLabel: { fontSize: 18, fontWeight: '900' },
+  breakdownTotalAmount: { fontSize: 20, fontWeight: '900' },
 
-  breakdownTotalAmount: {
-    fontSize: 20,
-    fontWeight: '900',
-  },
-
-  breakdownItem: {
-    marginBottom: 18,
-  },
+  breakdownItem: { marginBottom: 18 },
 
   breakdownTopRow: {
     flexDirection: 'row',
@@ -701,30 +641,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  breakdownNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-
-  breakdownIcon: {
-    fontSize: 22,
-    marginRight: 8,
-  },
-
-  breakdownName: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
-
-  breakdownAmount: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
+  breakdownNameRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  breakdownIcon: { fontSize: 22, marginRight: 8 },
+  breakdownName: { fontSize: 16, fontWeight: '900' },
+  breakdownAmount: { fontSize: 16, fontWeight: '900' },
 
   breakdownTrack: {
     height: 10,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: 999,
     overflow: 'hidden',
     marginTop: 8,
@@ -732,7 +656,6 @@ const styles = StyleSheet.create({
 
   breakdownFill: {
     height: '100%',
-    backgroundColor: '#111',
     borderRadius: 999,
   },
 
@@ -743,29 +666,17 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  filterScroll: {
-    marginBottom: 14,
-  },
+  filterScroll: { marginBottom: 14 },
 
   filterChip: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
     marginRight: 8,
   },
 
-  activeFilterChip: {
-    backgroundColor: '#111111',
-  },
-
   filterChipText: {
     fontWeight: '900',
-    color: '#666666',
-  },
-
-  activeFilterChipText: {
-    color: '#FFFFFF',
   },
 
   transactionRow: {
@@ -799,9 +710,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
 
-  lockedIcon: {
-    fontSize: 16,
-  },
+  lockedIcon: { fontSize: 16 },
 
   transaction: {
     flex: 1,
@@ -809,29 +718,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  defaultCard: {
-    backgroundColor: '#FFFFFF',
-  },
-
-  incomeCard: {
-    backgroundColor: '#EAF8EE',
-  },
-
-  spendCard: {
-    backgroundColor: '#FDECEC',
-  },
-
-  stuffCard: {
-    backgroundColor: '#EDF3FF',
-  },
-
-  transferCard: {
-    backgroundColor: '#F2F2F2',
-  },
-
-  deleteCard: {
-    backgroundColor: '#FFF4E5',
-  },
+  defaultCard: { backgroundColor: '#FFFFFF' },
+  incomeCard: { backgroundColor: '#EAF8EE' },
+  spendCard: { backgroundColor: '#FDECEC' },
+  transferCard: { backgroundColor: '#F2F2F2' },
+  deleteCard: { backgroundColor: '#FFF4E5' },
 
   transactionTopRow: {
     flexDirection: 'row',

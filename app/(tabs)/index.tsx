@@ -1,11 +1,7 @@
+import { getTheme } from '@/constants/theme';
 import { Envelope, useStashStore } from '@/store/store';
 import { router } from 'expo-router';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DraggableFlatList, {
   RenderItemParams,
 } from 'react-native-draggable-flatlist';
@@ -30,6 +26,9 @@ export default function HomeScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const reorderEnvelopes = useStashStore((state) => state.reorderEnvelopes);
+  const themeColor = useStashStore((state) => state.themeColor);
+
+  const theme = getTheme(themeColor);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
@@ -41,7 +40,7 @@ export default function HomeScreen() {
     const progress = hasGoal ? Math.min(item.balance / goalAmount, 1) : 0;
     const percent = Math.round(progress * 100);
     const icon = item.icon ?? '💵';
-    const envelopeColor = item.color ?? '#C8FF9B';
+    const envelopeColor = item.color ?? theme.button;
     const envelopeTint = hexToRgba(envelopeColor, 0.18);
     const goalComplete = hasGoal && item.balance >= goalAmount;
 
@@ -64,12 +63,7 @@ export default function HomeScreen() {
           <Text style={styles.dragHandleText}>☰</Text>
         </TouchableOpacity>
 
-        <View
-          style={[
-            styles.iconBubble,
-            { backgroundColor: envelopeColor },
-          ]}
-        >
+        <View style={[styles.iconBubble, { backgroundColor: envelopeColor }]}>
           <Text style={styles.iconText}>{icon}</Text>
         </View>
 
@@ -78,20 +72,13 @@ export default function HomeScreen() {
             <Text style={styles.envelopeName}>{item.name}</Text>
 
             {goalComplete && (
-              <View
-                style={[
-                  styles.completeBadge,
-                  { backgroundColor: envelopeColor },
-                ]}
-              >
+              <View style={[styles.completeBadge, { backgroundColor: envelopeColor }]}>
                 <Text style={styles.completeBadgeText}>Goal Met 🎉</Text>
               </View>
             )}
           </View>
 
-          <Text style={styles.envelopeBalance}>
-            ${formatMoney(item.balance)}
-          </Text>
+          <Text style={styles.envelopeBalance}>${formatMoney(item.balance)}</Text>
 
           {hasGoal && (
             <View style={styles.goalSection}>
@@ -105,7 +92,7 @@ export default function HomeScreen() {
                     styles.progressFill,
                     {
                       width: `${percent}%`,
-                      backgroundColor: 'rgba(0,0,0,0.75)',
+                      backgroundColor: theme.accent,
                     },
                   ]}
                 />
@@ -114,7 +101,7 @@ export default function HomeScreen() {
               <Text
                 style={[
                   styles.percentText,
-                  goalComplete && styles.completedPercentText,
+                  goalComplete && { color: theme.accent },
                 ]}
               >
                 {goalComplete ? 'Fully funded!' : `${percent}% complete`}
@@ -134,7 +121,10 @@ export default function HomeScreen() {
       keyExtractor={(item) => item.id}
       renderItem={renderEnvelope}
       onDragEnd={({ data }) => reorderEnvelopes(data)}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { backgroundColor: theme.background },
+      ]}
       ListHeaderComponent={
         <>
           <View style={styles.header}>
@@ -143,7 +133,13 @@ export default function HomeScreen() {
           </View>
 
           <TouchableOpacity
-            style={styles.totalCard}
+            style={[
+              styles.totalCard,
+              {
+                backgroundColor: theme.button,
+                borderColor: theme.accent,
+              },
+            ]}
             onPress={() => router.push('/activity')}
           >
             <Text style={styles.label}>STASH BALANCE</Text>
@@ -166,17 +162,19 @@ export default function HomeScreen() {
 
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[styles.primaryButton, { backgroundColor: theme.accent }]}
               onPress={() => router.push('/add-income')}
             >
               <Text style={styles.primaryButtonText}>+ Income</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.secondaryButton}
+              style={[styles.secondaryButton, { backgroundColor: theme.soft }]}
               onPress={() => router.push('/add-envelope')}
             >
-              <Text style={styles.secondaryButtonText}>+ Envelope</Text>
+              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>
+                + Envelope
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -189,19 +187,21 @@ export default function HomeScreen() {
             </View>
 
             <TouchableOpacity onPress={() => router.push('/activity')}>
-              <Text style={styles.viewActivity}>Activity</Text>
+              <Text style={[styles.viewActivity, { color: theme.accent }]}>
+                Activity
+              </Text>
             </TouchableOpacity>
           </View>
 
           {envelopes.length === 0 && (
-            <View style={styles.emptyCard}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.soft }]}>
               <Text style={styles.emptyTitle}>No envelopes yet</Text>
               <Text style={styles.emptyText}>
                 Create your first envelope to start organizing your money.
               </Text>
 
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={[styles.emptyButton, { backgroundColor: theme.button }]}
                 onPress={() => router.push('/add-envelope')}
               >
                 <Text style={styles.emptyButtonText}>Create Envelope</Text>
@@ -216,7 +216,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 50, backgroundColor: '#F8FFF4' },
+  content: { padding: 16, paddingBottom: 50 },
 
   header: {
     marginTop: 60,
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
   },
 
   totalCard: {
-    backgroundColor: '#C8FF9B',
     borderRadius: 28,
     padding: 22,
     marginBottom: 14,
+    borderWidth: 2,
   },
 
   label: {
@@ -291,7 +291,6 @@ const styles = StyleSheet.create({
 
   primaryButton: {
     flex: 1,
-    backgroundColor: '#111111',
     padding: 16,
     borderRadius: 18,
     alignItems: 'center',
@@ -305,14 +304,12 @@ const styles = StyleSheet.create({
 
   secondaryButton: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 18,
     alignItems: 'center',
   },
 
   secondaryButtonText: {
-    color: '#111111',
     fontWeight: '900',
     fontSize: 16,
   },
@@ -340,11 +337,9 @@ const styles = StyleSheet.create({
   viewActivity: {
     fontWeight: '900',
     fontSize: 16,
-    color: '#111111',
   },
 
   emptyCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 20,
   },
@@ -365,7 +360,6 @@ const styles = StyleSheet.create({
   },
 
   emptyButton: {
-    backgroundColor: '#C8FF9B',
     padding: 15,
     borderRadius: 16,
     alignItems: 'center',
@@ -485,10 +479,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#666666',
     marginTop: 5,
-  },
-
-  completedPercentText: {
-    color: '#111111',
   },
 
   arrow: {

@@ -1,12 +1,57 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
+import { ThemeColor } from '@/store/store';
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#2F7D32';
 const tintColorDark = '#fff';
+
+export const appThemes = {
+  green: {
+    name: 'Green',
+    background: '#F8FFF4',
+    accent: '#2F7D32',
+    soft: '#EAF8DF',
+    button: '#C8FF9B',
+  },
+  blue: {
+    name: 'Blue',
+    background: '#F3F8FF',
+    accent: '#2563EB',
+    soft: '#E5EEFF',
+    button: '#BFD7FF',
+  },
+  purple: {
+    name: 'Purple',
+    background: '#FAF5FF',
+    accent: '#7E22CE',
+    soft: '#F1E4FF',
+    button: '#DDBBFF',
+  },
+  orange: {
+    name: 'Orange',
+    background: '#FFF8EF',
+    accent: '#EA580C',
+    soft: '#FFE8CC',
+    button: '#FFD3A6',
+  },
+  pink: {
+    name: 'Pink',
+    background: '#FFF5FA',
+    accent: '#DB2777',
+    soft: '#FFE1F0',
+    button: '#FFC4DF',
+  },
+  yellow: {
+    name: 'Yellow',
+    background: '#FFFDF2',
+    accent: '#D4A017',
+    soft: '#FFF4CC',
+    button: '#FFE88A',
+  },
+};
+
+export const getTheme = (themeColor: ThemeColor) => {
+  return appThemes[themeColor] ?? appThemes.green;
+};
 
 export const Colors = {
   light: {
@@ -29,13 +74,9 @@ export const Colors = {
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -45,9 +86,12 @@ export const Fonts = Platform.select({
     mono: 'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans:
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    rounded:
+      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    mono:
+      "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });

@@ -1,3 +1,4 @@
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import {
@@ -17,46 +18,62 @@ const formatMoney = (amount: number) => {
 
 export default function AccountsScreen() {
   const accounts = useStashStore((state) => state.accounts);
+  const themeColor = useStashStore((state) => state.themeColor);
+  const theme = getTheme(themeColor);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Accounts</Text>
 
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: theme.button }]}
           onPress={() => router.push('/add-account')}
         >
-          <Text style={styles.addButtonText}>+ Add</Text>
+          <Text style={[styles.addButtonText, { color: theme.accent }]}>
+            + Add
+          </Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity
-        style={styles.transferButton}
+        style={[styles.transferButton, { backgroundColor: theme.accent }]}
         onPress={() => router.push('/transfer')}
       >
         <Text style={styles.transferButtonText}>⇄ Transfer Money</Text>
       </TouchableOpacity>
 
       {accounts.length === 0 ? (
-        <Text style={styles.empty}>No accounts yet.</Text>
+        <View style={[styles.emptyCard, { backgroundColor: theme.soft }]}>
+          <Text style={styles.emptyTitle}>No accounts yet</Text>
+          <Text style={styles.empty}>
+            Add your first account to start tracking your money.
+          </Text>
+        </View>
       ) : (
         accounts.map((account) => (
           <TouchableOpacity
-            style={styles.accountCard}
+            style={[styles.accountCard, { backgroundColor: theme.soft }]}
             key={account.id}
             onPress={() => router.push(`/account/${account.id}`)}
           >
             <View style={styles.accountInfo}>
               <Text style={styles.accountName}>🏦 {account.name}</Text>
               <Text style={styles.accountType}>Tap to view details</Text>
-              <Text style={styles.balance}>${formatMoney(account.balance)}</Text>
+              <Text style={[styles.balance, { color: theme.accent }]}>
+                ${formatMoney(account.balance)}
+              </Text>
             </View>
 
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
         ))
       )}
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -64,7 +81,6 @@ export default function AccountsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FFF4',
     padding: 20,
   },
 
@@ -82,19 +98,17 @@ const styles = StyleSheet.create({
   },
 
   addButton: {
-    backgroundColor: '#C8FF9B',
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 999,
   },
 
   addButtonText: {
-    fontWeight: '800',
+    fontWeight: '900',
     fontSize: 16,
   },
 
   transferButton: {
-    backgroundColor: '#111',
     borderRadius: 18,
     padding: 16,
     alignItems: 'center',
@@ -107,14 +121,25 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
+  emptyCard: {
+    borderRadius: 18,
+    padding: 18,
+  },
+
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 6,
+  },
+
   empty: {
     fontSize: 16,
     fontWeight: '700',
     color: '#666',
+    lineHeight: 22,
   },
 
   accountCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 18,
     marginBottom: 12,
@@ -135,6 +160,7 @@ const styles = StyleSheet.create({
   accountType: {
     marginTop: 4,
     color: '#666',
+    fontWeight: '700',
   },
 
   balance: {

@@ -1,13 +1,18 @@
+import { getTheme } from '@/constants/theme';
+import { useStashStore } from '@/store/store';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
 export default function TabLayout() {
+  const themeColor = useStashStore((state) => state.themeColor);
+  const theme = getTheme(themeColor);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#111111',
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: '#999999',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
