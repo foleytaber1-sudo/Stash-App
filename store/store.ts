@@ -2,6 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+export type ThemeColor =
+  | 'green'
+  | 'blue'
+  | 'purple'
+  | 'orange'
+  | 'pink'
+  | 'yellow';
+
 export type Account = {
   id: string;
   name: string;
@@ -40,16 +48,23 @@ type StashStore = {
   accounts: Account[];
   envelopes: Envelope[];
   transactions: Transaction[];
+
+  themeColor: ThemeColor;
+  setThemeColor: (color: ThemeColor) => void;
+
   addAccount: (name: string, balance: number) => void;
   editAccountName: (id: string, name: string) => void;
   deleteAccount: (id: string) => void;
+
   addEnvelope: (name: string, icon?: string) => void;
   editEnvelopeName: (id: string, name: string) => void;
   editEnvelopeGoal: (id: string, goalAmount: number) => void;
   editEnvelopeIcon: (id: string, icon: string) => void;
   editEnvelopeColor: (id: string, color: string) => void;
+  reorderEnvelopes: (envelopes: Envelope[]) => void;
   stuffEnvelope: (id: string, amount: number) => void;
   deleteEnvelope: (id: string) => void;
+
   addIncome: (accountId: string, amount: number) => void;
   transferBetweenAccounts: (
     fromAccountId: string,
@@ -63,6 +78,7 @@ type StashStore = {
     amount: number,
     note?: string
   ) => void;
+
   deleteTransaction: (id: string) => void;
   resetApp: () => void;
 };
@@ -75,6 +91,13 @@ export const useStashStore = create<StashStore>()(
       accounts: [],
       envelopes: [],
       transactions: [],
+
+      themeColor: 'green',
+
+      setThemeColor: (color) =>
+        set({
+          themeColor: color,
+        }),
 
       addAccount: (name, balance) =>
         set((state) => {
@@ -102,8 +125,8 @@ export const useStashStore = create<StashStore>()(
 
       editAccountName: (id, name) =>
         set((state) => ({
-          accounts: state.accounts.map((item) =>
-            item.id === id ? { ...item, name } : item
+          accounts: state.accounts.map((account) =>
+            account.id === id ? { ...account, name } : account
           ),
         })),
 
@@ -147,31 +170,36 @@ export const useStashStore = create<StashStore>()(
 
       editEnvelopeName: (id, name) =>
         set((state) => ({
-          envelopes: state.envelopes.map((item) =>
-            item.id === id ? { ...item, name } : item
+          envelopes: state.envelopes.map((envelope) =>
+            envelope.id === id ? { ...envelope, name } : envelope
           ),
         })),
 
       editEnvelopeGoal: (id, goalAmount) =>
         set((state) => ({
-          envelopes: state.envelopes.map((item) =>
-            item.id === id ? { ...item, goalAmount } : item
+          envelopes: state.envelopes.map((envelope) =>
+            envelope.id === id ? { ...envelope, goalAmount } : envelope
           ),
         })),
 
       editEnvelopeIcon: (id, icon) =>
         set((state) => ({
-          envelopes: state.envelopes.map((item) =>
-            item.id === id ? { ...item, icon } : item
+          envelopes: state.envelopes.map((envelope) =>
+            envelope.id === id ? { ...envelope, icon } : envelope
           ),
         })),
 
       editEnvelopeColor: (id, color) =>
         set((state) => ({
-          envelopes: state.envelopes.map((item) =>
-            item.id === id ? { ...item, color } : item
+          envelopes: state.envelopes.map((envelope) =>
+            envelope.id === id ? { ...envelope, color } : envelope
           ),
         })),
+
+      reorderEnvelopes: (envelopes) =>
+        set({
+          envelopes,
+        }),
 
       stuffEnvelope: (id, amount) =>
         set((state) => {
@@ -406,6 +434,7 @@ export const useStashStore = create<StashStore>()(
           accounts: [],
           envelopes: [],
           transactions: [],
+          themeColor: 'green',
         }),
     }),
     {

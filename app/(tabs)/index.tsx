@@ -1,12 +1,14 @@
-import { useStashStore } from '@/store/store';
+import { Envelope, useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import DraggableFlatList, {
+  RenderItemParams,
+} from 'react-native-draggable-flatlist';
 
 const formatMoney = (amount: number) => {
   return amount.toLocaleString(undefined, {
@@ -27,184 +29,292 @@ const hexToRgba = (hex: string, opacity: number) => {
 export default function HomeScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
+  const reorderEnvelopes = useStashStore((state) => state.reorderEnvelopes);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
   const availableToStuff = totalBalance - stuffedTotal;
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+  const renderEnvelope = ({ item, drag, isActive }: RenderItemParams<Envelope>) => {
+    const goalAmount = item.goalAmount ?? 0;
+    const hasGoal = goalAmount > 0;
+    const progress = hasGoal ? Math.min(item.balance / goalAmount, 1) : 0;
+    const percent = Math.round(progress * 100);
+    const icon = item.icon ?? '💵';
+    const envelopeColor = item.color ?? '#C8FF9B';
+    const envelopeTint = hexToRgba(envelopeColor, 0.18);
+    const goalComplete = hasGoal && item.balance >= goalAmount;
+
+    return (
       <TouchableOpacity
-        style={styles.totalCard}
-        onPress={() => router.push('/activity')}
+        style={[
+          styles.envelopeCard,
+          { backgroundColor: envelopeTint },
+          goalComplete && { borderColor: envelopeColor },
+          isActive && styles.activeEnvelopeCard,
+        ]}
+        onPress={() => router.push(`/envelope/${item.id}`)}
+        activeOpacity={0.9}
       >
-        <Text style={styles.label}>TOTAL BALANCE</Text>
-        <Text style={styles.totalBalance}>${formatMoney(totalBalance)}</Text>
-
-        <View style={styles.availableBox}>
-          <Text style={styles.availableLabel}>AVAILABLE TO STUFF</Text>
-          <Text style={styles.availableAmount}>
-            ${formatMoney(availableToStuff)}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.incomeButton}
-        onPress={() => router.push('/add-income')}
-      >
-        <Text style={styles.incomeText}>+ Income</Text>
-      </TouchableOpacity>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Envelopes</Text>
-
-        <TouchableOpacity onPress={() => router.push('/add-envelope')}>
-          <Text style={styles.addEnvelope}>+ Envelope</Text>
+        <TouchableOpacity
+          style={styles.dragHandle}
+          onLongPress={drag}
+          delayLongPress={150}
+        >
+          <Text style={styles.dragHandleText}>☰</Text>
         </TouchableOpacity>
-      </View>
 
-      {envelopes.length === 0 ? (
-        <Text style={styles.empty}>No envelopes yet. Add one to start stuffing.</Text>
-      ) : (
-        envelopes.map((envelope) => {
-          const goalAmount = envelope.goalAmount ?? 0;
-          const hasGoal = goalAmount > 0;
-          const progress = hasGoal ? Math.min(envelope.balance / goalAmount, 1) : 0;
-          const percent = Math.round(progress * 100);
-          const icon = envelope.icon ?? '💵';
-          const envelopeColor = envelope.color ?? '#C8FF9B';
-          const envelopeTint = hexToRgba(envelopeColor, 0.18);
-          const goalComplete = hasGoal && envelope.balance >= goalAmount;
+        <View
+          style={[
+            styles.iconBubble,
+            { backgroundColor: envelopeColor },
+          ]}
+        >
+          <Text style={styles.iconText}>{icon}</Text>
+        </View>
 
-          return (
-            <TouchableOpacity
-              key={envelope.id}
-              style={[
-                styles.envelopeCard,
-                { backgroundColor: envelopeTint },
-                goalComplete && { borderColor: envelopeColor },
-              ]}
-              onPress={() => router.push(`/envelope/${envelope.id}`)}
-            >
+        <View style={styles.envelopeInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.envelopeName}>{item.name}</Text>
+
+            {goalComplete && (
               <View
                 style={[
-                  styles.iconBubble,
+                  styles.completeBadge,
                   { backgroundColor: envelopeColor },
                 ]}
               >
-                <Text style={styles.iconText}>{icon}</Text>
+                <Text style={styles.completeBadgeText}>Goal Met 🎉</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.envelopeBalance}>
+            ${formatMoney(item.balance)}
+          </Text>
+
+          {hasGoal && (
+            <View style={styles.goalSection}>
+              <Text style={styles.goalText}>
+                ${formatMoney(item.balance)} / ${formatMoney(goalAmount)}
+              </Text>
+
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${percent}%`,
+                      backgroundColor: 'rgba(0,0,0,0.75)',
+                    },
+                  ]}
+                />
               </View>
 
-              <View style={styles.envelopeInfo}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.envelopeName}>{envelope.name}</Text>
+              <Text
+                style={[
+                  styles.percentText,
+                  goalComplete && styles.completedPercentText,
+                ]}
+              >
+                {goalComplete ? 'Fully funded!' : `${percent}% complete`}
+              </Text>
+            </View>
+          )}
+        </View>
 
-                  {goalComplete && (
-                    <View
-                      style={[
-                        styles.completeBadge,
-                        { backgroundColor: envelopeColor },
-                      ]}
-                    >
-                      <Text style={styles.completeBadgeText}>Goal Met 🎉</Text>
-                    </View>
-                  )}
-                </View>
+        <Text style={styles.arrow}>›</Text>
+      </TouchableOpacity>
+    );
+  };
 
-                <Text style={styles.envelopeBalance}>
-                  ${formatMoney(envelope.balance)}
+  return (
+    <DraggableFlatList
+      data={envelopes}
+      keyExtractor={(item) => item.id}
+      renderItem={renderEnvelope}
+      onDragEnd={({ data }) => reorderEnvelopes(data)}
+      contentContainerStyle={styles.content}
+      ListHeaderComponent={
+        <>
+          <View style={styles.header}>
+            <Text style={styles.logo}>STASH</Text>
+            <Text style={styles.tagline}>Virtual cash stuffing made simple</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.totalCard}
+            onPress={() => router.push('/activity')}
+          >
+            <Text style={styles.label}>STASH BALANCE</Text>
+            <Text style={styles.totalBalance}>${formatMoney(totalBalance)}</Text>
+
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryLabel}>Stuffed</Text>
+                <Text style={styles.summaryAmount}>${formatMoney(stuffedTotal)}</Text>
+              </View>
+
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryLabel}>Available</Text>
+                <Text style={styles.summaryAmount}>
+                  ${formatMoney(availableToStuff)}
                 </Text>
-
-                {hasGoal && (
-                  <View style={styles.goalSection}>
-                    <Text style={styles.goalText}>
-                      ${formatMoney(envelope.balance)} / ${formatMoney(goalAmount)}
-                    </Text>
-
-                    <View style={styles.progressTrack}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${percent}%`,
-                            backgroundColor: 'rgba(0,0,0,0.75)',
-                          },
-                        ]}
-                      />
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.percentText,
-                        goalComplete && styles.completedPercentText,
-                      ]}
-                    >
-                      {goalComplete ? 'Fully funded!' : `${percent}% complete`}
-                    </Text>
-                  </View>
-                )}
               </View>
+            </View>
+          </TouchableOpacity>
 
-              <Text style={styles.arrow}>›</Text>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/add-income')}
+            >
+              <Text style={styles.primaryButtonText}>+ Income</Text>
             </TouchableOpacity>
-          );
-        })
-      )}
-    </ScrollView>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => router.push('/add-envelope')}
+            >
+              <Text style={styles.secondaryButtonText}>+ Envelope</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Envelopes</Text>
+              {envelopes.length > 1 && (
+                <Text style={styles.sortHint}>Hold ☰ to reorder</Text>
+              )}
+            </View>
+
+            <TouchableOpacity onPress={() => router.push('/activity')}>
+              <Text style={styles.viewActivity}>Activity</Text>
+            </TouchableOpacity>
+          </View>
+
+          {envelopes.length === 0 && (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No envelopes yet</Text>
+              <Text style={styles.emptyText}>
+                Create your first envelope to start organizing your money.
+              </Text>
+
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => router.push('/add-envelope')}
+              >
+                <Text style={styles.emptyButtonText}>Create Envelope</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </>
+      }
+      ListFooterComponent={<View style={{ height: 50 }} />}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FFF4' },
-  content: { padding: 16, paddingBottom: 50 },
+  content: { padding: 16, paddingBottom: 50, backgroundColor: '#F8FFF4' },
 
-  totalCard: {
-    backgroundColor: '#C8FF9B',
-    borderRadius: 24,
-    padding: 20,
+  header: {
     marginTop: 60,
     marginBottom: 16,
   },
 
+  logo: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: '#111111',
+  },
+
+  tagline: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#666666',
+    marginTop: 4,
+  },
+
+  totalCard: {
+    backgroundColor: '#C8FF9B',
+    borderRadius: 28,
+    padding: 22,
+    marginBottom: 14,
+  },
+
   label: {
-    fontWeight: '800',
+    fontWeight: '900',
     fontSize: 13,
+    color: '#111111',
+    letterSpacing: 0.5,
   },
 
   totalBalance: {
-    fontSize: 42,
+    fontSize: 44,
     fontWeight: '900',
-    marginVertical: 8,
+    marginTop: 8,
+    marginBottom: 18,
+    color: '#111111',
   },
 
-  availableBox: {
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 16,
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  summaryBox: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: 18,
     padding: 14,
   },
 
-  availableLabel: {
+  summaryLabel: {
     fontSize: 12,
-    fontWeight: '800',
-  },
-
-  availableAmount: {
-    fontSize: 28,
     fontWeight: '900',
+    color: '#555555',
+    marginBottom: 4,
   },
 
-  incomeButton: {
-    backgroundColor: '#111',
+  summaryAmount: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#111111',
+  },
+
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 22,
+  },
+
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#111111',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     alignItems: 'center',
-    marginBottom: 20,
   },
 
-  incomeText: {
-    color: '#FFF',
+  primaryButtonText: {
+    color: '#FFFFFF',
     fontWeight: '900',
+    fontSize: 16,
+  },
+
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+
+  secondaryButtonText: {
+    color: '#111111',
+    fontWeight: '900',
+    fontSize: 16,
   },
 
   sectionHeader: {
@@ -217,18 +327,54 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 28,
     fontWeight: '900',
+    color: '#111111',
   },
 
-  addEnvelope: {
+  sortHint: {
+    fontSize: 13,
     fontWeight: '800',
-    fontSize: 16,
+    color: '#777777',
+    marginTop: 3,
   },
 
-  empty: {
+  viewActivity: {
+    fontWeight: '900',
     fontSize: 16,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 10,
+    color: '#111111',
+  },
+
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 20,
+  },
+
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 8,
+    color: '#111111',
+  },
+
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666666',
+    lineHeight: 23,
+    marginBottom: 16,
+  },
+
+  emptyButton: {
+    backgroundColor: '#C8FF9B',
+    padding: 15,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#111111',
   },
 
   envelopeCard: {
@@ -240,6 +386,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
+  },
+
+  activeEnvelopeCard: {
+    transform: [{ scale: 1.02 }],
+    opacity: 0.95,
+  },
+
+  dragHandle: {
+    width: 28,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+
+  dragHandleText: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#777777',
   },
 
   iconBubble: {
@@ -269,6 +434,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     marginRight: 8,
+    color: '#111111',
   },
 
   completeBadge: {
@@ -281,13 +447,14 @@ const styles = StyleSheet.create({
   completeBadgeText: {
     fontSize: 12,
     fontWeight: '900',
-    color: '#111',
+    color: '#111111',
   },
 
   envelopeBalance: {
     fontSize: 24,
     fontWeight: '900',
     marginTop: 4,
+    color: '#111111',
   },
 
   goalSection: {
@@ -297,7 +464,7 @@ const styles = StyleSheet.create({
   goalText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#666',
+    color: '#666666',
     marginBottom: 6,
   },
 
@@ -316,18 +483,18 @@ const styles = StyleSheet.create({
   percentText: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#666',
+    color: '#666666',
     marginTop: 5,
   },
 
   completedPercentText: {
-    color: '#111',
+    color: '#111111',
   },
 
   arrow: {
     fontSize: 34,
     fontWeight: '700',
-    color: '#999',
+    color: '#999999',
     marginLeft: 10,
   },
 });

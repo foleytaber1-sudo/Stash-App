@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -29,6 +30,8 @@ export default function ActivityScreen() {
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('month');
   const [selectedFilter, setSelectedFilter] = useState<TransactionFilter>('all');
   const [deleteMode, setDeleteMode] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
@@ -53,10 +56,31 @@ export default function ActivityScreen() {
     return transactionDate >= startDate;
   });
 
-  const visibleTransactions = filteredTransactions.filter((transaction) => {
-    if (selectedFilter === 'all') return true;
-    return transaction.type === selectedFilter;
-  });
+  const visibleTransactions = filteredTransactions
+    .filter((transaction) => {
+      if (selectedFilter === 'all') return true;
+      return transaction.type === selectedFilter;
+    })
+    .filter((transaction) => {
+      const query = searchText.trim().toLowerCase();
+
+      if (!query) return true;
+
+      const envelope = envelopes.find((item) => item.id === transaction.envelopeId);
+      const account = accounts.find((item) => item.id === transaction.accountId);
+
+      const description = transaction.description?.toLowerCase() ?? '';
+      const envelopeName = envelope?.name.toLowerCase() ?? '';
+      const accountName = account?.name.toLowerCase() ?? '';
+      const type = transaction.type.toLowerCase();
+
+      return (
+        description.includes(query) ||
+        envelopeName.includes(query) ||
+        accountName.includes(query) ||
+        type.includes(query)
+      );
+    });
 
   const spendingBreakdown = envelopes
     .map((envelope) => {
@@ -110,6 +134,14 @@ export default function ActivityScreen() {
         },
       ]
     );
+  };
+
+  const handleSearchToggle = () => {
+    if (searchOpen) {
+      setSearchText('');
+    }
+
+    setSearchOpen((current) => !current);
   };
 
   const getTransactionIcon = (type: string) => {
@@ -182,14 +214,14 @@ export default function ActivityScreen() {
       <Text style={styles.title}>Activity</Text>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.label}>TOTAL BALANCE</Text>
+        <Text style={styles.label}>ACTIVITY OVERVIEW</Text>
         <Text style={styles.total}>${formatMoney(totalBalance)}</Text>
 
         <Text style={styles.sub}>
-          Available To Stuff: ${formatMoney(availableToStuff)}
+          Available Cash: ${formatMoney(availableToStuff)}
         </Text>
         <Text style={styles.sub}>
-          Stuffed In Envelopes: ${formatMoney(stuffedTotal)}
+          Envelope Funds: ${formatMoney(stuffedTotal)}
         </Text>
       </View>
 
@@ -312,20 +344,48 @@ export default function ActivityScreen() {
       <View style={styles.sectionRow}>
         <Text style={styles.sectionNoMargin}>Transaction History</Text>
 
-        <TouchableOpacity
-          style={[styles.moreButton, deleteMode && styles.moreButtonActive]}
-          onPress={() => setDeleteMode((current) => !current)}
-        >
-          <Text
-            style={[
-              styles.moreButtonText,
-              deleteMode && styles.moreButtonTextActive,
-            ]}
+        <View style={styles.historyActions}>
+          <TouchableOpacity
+            style={[styles.searchButton, searchOpen && styles.searchButtonActive]}
+            onPress={handleSearchToggle}
           >
-            ⋯
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.searchButtonText,
+                searchOpen && styles.searchButtonTextActive,
+              ]}
+            >
+              🔍
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.moreButton, deleteMode && styles.moreButtonActive]}
+            onPress={() => setDeleteMode((current) => !current)}
+          >
+            <Text
+              style={[
+                styles.moreButtonText,
+                deleteMode && styles.moreButtonTextActive,
+              ]}
+            >
+              ⋯
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {searchOpen && (
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search transactions..."
+          placeholderTextColor="#888888"
+          value={searchText}
+          onChangeText={setSearchText}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      )}
 
       {deleteMode && (
         <Text style={styles.deleteModeHint}>
@@ -360,7 +420,11 @@ export default function ActivityScreen() {
       </ScrollView>
 
       {visibleTransactions.length === 0 ? (
-        <Text style={styles.empty}>No transactions found for this filter.</Text>
+        <Text style={styles.empty}>
+          {searchText.trim()
+            ? 'No transactions match your search.'
+            : 'No transactions found for this filter.'}
+        </Text>
       ) : (
         visibleTransactions.map((transaction) => {
           const canDelete = canDeleteTransaction(transaction);
@@ -526,6 +590,43 @@ const styles = StyleSheet.create({
   sectionNoMargin: {
     fontSize: 26,
     fontWeight: '900',
+    flex: 1,
+  },
+
+  historyActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  searchButtonActive: {
+    backgroundColor: '#C8FF9B',
+  },
+
+  searchButtonText: {
+    fontSize: 18,
+  },
+
+  searchButtonTextActive: {
+    color: '#111111',
+  },
+
+  searchInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 14,
+    color: '#111111',
   },
 
   moreButton: {
