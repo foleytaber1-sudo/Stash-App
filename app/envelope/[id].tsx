@@ -83,6 +83,7 @@ export default function EnvelopeScreen() {
   const [spendAmount, setSpendAmount] = useState('');
   const [spendNote, setSpendNote] = useState('');
   const [selectedSpendAccount, setSelectedSpendAccount] = useState('');
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -112,6 +113,9 @@ export default function EnvelopeScreen() {
   const percent = Math.round(progress * 100);
   const icon = envelope.icon ?? '💰';
   const envelopeColor = envelope.color ?? '#C8FF9B';
+  const selectedAccount = accounts.find(
+    (account) => account.id === selectedSpendAccount
+  );
 
   const handleSaveEnvelopeName = () => {
     const cleanedName = newEnvelopeName.trim();
@@ -161,6 +165,7 @@ export default function EnvelopeScreen() {
     setSpendAmount('');
     setSpendNote('');
     setSelectedSpendAccount('');
+    setShowAccountDropdown(false);
   };
 
   const handleDelete = () => {
@@ -372,18 +377,48 @@ export default function EnvelopeScreen() {
 
         <Text style={styles.smallLabel}>Paid From</Text>
 
-        {accounts.map((account) => (
-          <TouchableOpacity
-            key={account.id}
-            style={[
-              styles.accountButton,
-              selectedSpendAccount === account.id && styles.selectedAccount,
-            ]}
-            onPress={() => setSelectedSpendAccount(account.id)}
-          >
-            <Text style={styles.accountText}>{account.name}</Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setShowAccountDropdown(!showAccountDropdown)}
+        >
+          <Text style={styles.dropdownText}>
+            {selectedAccount
+              ? `${selectedAccount.name} • $${formatMoney(selectedAccount.balance)}`
+              : 'Choose account'}
+          </Text>
+
+          <Text style={styles.dropdownArrow}>
+            {showAccountDropdown ? '⌃' : '⌄'}
+          </Text>
+        </TouchableOpacity>
+
+        {showAccountDropdown && (
+          <View style={styles.dropdownList}>
+            {accounts.length === 0 ? (
+              <Text style={styles.emptyDropdownText}>No accounts yet.</Text>
+            ) : (
+              accounts.map((account) => (
+                <TouchableOpacity
+                  key={account.id}
+                  style={[
+                    styles.dropdownItem,
+                    selectedSpendAccount === account.id &&
+                      styles.selectedDropdownItem,
+                  ]}
+                  onPress={() => {
+                    setSelectedSpendAccount(account.id);
+                    setShowAccountDropdown(false);
+                  }}
+                >
+                  <Text style={styles.dropdownItemName}>{account.name}</Text>
+                  <Text style={styles.dropdownItemBalance}>
+                    ${formatMoney(account.balance)}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
 
         <TouchableOpacity style={styles.redButton} onPress={handleSpend}>
           <Text style={styles.buttonText}>Spend Money</Text>
@@ -560,16 +595,65 @@ const styles = StyleSheet.create({
 
   smallLabel: { fontSize: 15, fontWeight: '900', marginBottom: 8 },
 
-  accountButton: {
+  dropdownButton: {
     backgroundColor: '#F5F5F5',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  dropdownText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#333',
+  },
+
+  dropdownArrow: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#333',
+  },
+
+  dropdownList: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 14,
+    padding: 8,
+    marginBottom: 10,
+  },
+
+  dropdownItem: {
+    backgroundColor: '#FFFFFF',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
-  selectedAccount: { backgroundColor: '#C8FF9B' },
+  selectedDropdownItem: {
+    backgroundColor: '#C8FF9B',
+  },
 
-  accountText: { fontWeight: '800' },
+  dropdownItemName: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+
+  dropdownItemBalance: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#555',
+  },
+
+  emptyDropdownText: {
+    fontWeight: '800',
+    color: '#666',
+    padding: 10,
+  },
 
   iconGrid: {
     flexDirection: 'row',

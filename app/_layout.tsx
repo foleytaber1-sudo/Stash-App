@@ -15,9 +15,70 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="add-envelope"
+          options={{
+            title: 'Add Envelope',
+            headerBackTitle: 'Home',
+          }}
+        />
+
+        <Stack.Screen
+          name="add-income"
+          options={{
+            title: 'Add Income',
+            headerBackTitle: 'Home',
+          }}
+        />
+
+        <Stack.Screen
+          name="add-account"
+          options={{
+            title: 'Add Account',
+            headerBackTitle: 'Accounts',
+          }}
+        />
+
+        <Stack.Screen
+          name="envelope/[id]"
+          options={{
+            title: 'Envelope',
+            headerBackTitle: 'Home',
+          }}
+        />
+
+        <Stack.Screen
+          name="account/[id]"
+          options={{
+            title: 'Account',
+            headerBackTitle: 'Accounts',
+          }}
+        />
+
+        <Stack.Screen
+          name="transfer"
+          options={{
+            title: 'Transfer',
+            headerBackTitle: 'Home',
+          }}
+        />
+
+        <Stack.Screen
+          name="modal"
+          options={{
+            presentation: 'modal',
+            title: 'Modal',
+          }}
+        />
       </Stack>
+
       <StatusBar style="auto" />
     </ThemeProvider>
   );
