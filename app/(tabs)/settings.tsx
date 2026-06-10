@@ -1,4 +1,5 @@
 import { useStashStore } from '@/store/store';
+import { router } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
@@ -51,6 +52,14 @@ export default function SettingsScreen() {
         <Text style={styles.cardTitle}>Budget Help</Text>
         <TouchableOpacity style={styles.option}>
           <Text style={styles.optionText}>💡 Budget Tips</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Support</Text>
+        <TouchableOpacity style={styles.option} onPress={() => router.push('/report-bug')}>
+          <Text style={styles.optionText}>🐛 Report a Bug</Text>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
       </View>

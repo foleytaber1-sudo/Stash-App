@@ -1,4 +1,5 @@
 import { useStashStore } from '@/store/store';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -19,7 +20,7 @@ const formatMoney = (amount: number) => {
   });
 };
 
-export default function BalanceScreen() {
+export default function ActivityScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
@@ -178,7 +179,7 @@ export default function BalanceScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Balance</Text>
+      <Text style={styles.title}>Activity</Text>
 
       <View style={styles.summaryCard}>
         <Text style={styles.label}>TOTAL BALANCE</Text>
@@ -191,6 +192,20 @@ export default function BalanceScreen() {
           Stuffed In Envelopes: ${formatMoney(stuffedTotal)}
         </Text>
       </View>
+
+      <TouchableOpacity
+        style={styles.insightsButton}
+        onPress={() => router.push('/insights')}
+      >
+        <View>
+          <Text style={styles.insightsButtonTitle}>View Insights</Text>
+          <Text style={styles.insightsButtonSub}>
+            Top spending, money flow, graphs, and trends
+          </Text>
+        </View>
+
+        <Text style={styles.insightsArrow}>›</Text>
+      </TouchableOpacity>
 
       <View style={styles.moneyFlowCard}>
         <Text style={styles.cardTitle}>Money Flow</Text>
@@ -418,6 +433,35 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '800' },
   total: { fontSize: 42, fontWeight: '900', marginVertical: 8 },
   sub: { fontSize: 16, fontWeight: '700', marginTop: 6 },
+
+  insightsButton: {
+    backgroundColor: '#111111',
+    borderRadius: 22,
+    padding: 18,
+    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  insightsButtonTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+
+  insightsButtonSub: {
+    color: '#D7D7D7',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+
+  insightsArrow: {
+    color: '#FFFFFF',
+    fontSize: 42,
+    fontWeight: '300',
+  },
 
   moneyFlowCard: {
     backgroundColor: '#FFFFFF',

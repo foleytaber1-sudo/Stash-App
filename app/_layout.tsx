@@ -23,6 +23,13 @@ export default function RootLayout() {
         />
 
         <Stack.Screen
+          name="insights"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
           name="add-envelope"
           options={{
             title: 'Add Envelope',
@@ -67,6 +74,14 @@ export default function RootLayout() {
           options={{
             title: 'Transfer',
             headerBackTitle: 'Home',
+          }}
+        />
+
+        <Stack.Screen
+          name="report-bug"
+          options={{
+            title: 'Report a Bug',
+            headerBackTitle: 'Settings',
           }}
         />
 
