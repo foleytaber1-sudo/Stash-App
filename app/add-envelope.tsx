@@ -2,36 +2,50 @@ import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const ICONS = [
-  '💵',
-  '🛒',
-  '⛽',
-  '🍔',
+  '💰',
+  '🏦',
   '🏠',
+  '🏡',
   '🚗',
+  '⛽',
   '✈️',
+  '🛫',
   '🎄',
-  '🐶',
-  '🎮',
   '🎁',
-  '❤️',
-  '📱',
-  '🛠️',
-  '📚',
+  '🎂',
+  '🐶',
+  '👶',
   '💍',
+  '🎓',
+  '💻',
+  '📱',
+  '🎮',
+  '🍕',
+  '🛒',
+  '☕',
+  '🎟️',
+  '🏋️',
+  '🩺',
+  '👕',
+  '🔧',
+  '💸',
+  '🚤',
+  '📦',
+  '📈',
 ];
 
 export default function AddEnvelopeScreen() {
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('💵');
+  const [icon, setIcon] = useState('💰');
 
   const addEnvelope = useStashStore((state) => state.addEnvelope);
 
@@ -112,28 +126,28 @@ const styles = StyleSheet.create({
   },
 
   iconGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 30,
-  },
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  marginBottom: 30,
+},
 
-  iconButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    marginBottom: 10,
-  },
+iconButton: {
+  width: '15%',
+  aspectRatio: 1,
+  borderRadius: 14,
+  backgroundColor: '#FFFFFF',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 10,
+},
 
   selectedIcon: {
     backgroundColor: '#C8FF9B',
   },
 
   icon: {
-    fontSize: 28,
+    fontSize: 26,
   },
 
   saveButton: {

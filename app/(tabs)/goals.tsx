@@ -17,6 +17,15 @@ const formatMoney = (amount: number) => {
   });
 };
 
+const hexToRgba = (hex: string, opacity: number) => {
+  const cleanHex = hex.replace('#', '');
+  const red = parseInt(cleanHex.substring(0, 2), 16);
+  const green = parseInt(cleanHex.substring(2, 4), 16);
+  const blue = parseInt(cleanHex.substring(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+};
+
 export default function GoalsScreen() {
   const envelopes = useStashStore((state) => state.envelopes);
   const editEnvelopeGoal = useStashStore((state) => state.editEnvelopeGoal);
@@ -76,16 +85,44 @@ export default function GoalsScreen() {
             : 0;
           const percent = Math.round(progress * 100);
           const icon = envelope.icon ?? '💵';
+          const envelopeColor = envelope.color ?? '#C8FF9B';
+          const envelopeTint = hexToRgba(envelopeColor, 0.18);
+          const goalComplete = hasGoal && envelope.balance >= goalAmount;
 
           return (
-            <View style={styles.goalCard} key={envelope.id}>
+            <View
+              style={[
+                styles.goalCard,
+                { backgroundColor: envelopeTint },
+                goalComplete && { borderColor: envelopeColor },
+              ]}
+              key={envelope.id}
+            >
               <View style={styles.goalHeader}>
-                <View style={styles.iconBubble}>
+                <View
+                  style={[
+                    styles.iconBubble,
+                    { backgroundColor: envelopeColor },
+                  ]}
+                >
                   <Text style={styles.iconText}>{icon}</Text>
                 </View>
 
                 <View style={styles.goalHeaderText}>
-                  <Text style={styles.goalName}>{envelope.name}</Text>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.goalName}>{envelope.name}</Text>
+
+                    {goalComplete && (
+                      <View
+                        style={[
+                          styles.completeBadge,
+                          { backgroundColor: envelopeColor },
+                        ]}
+                      >
+                        <Text style={styles.completeBadgeText}>Goal Met 🎉</Text>
+                      </View>
+                    )}
+                  </View>
 
                   {hasGoal ? (
                     <Text style={styles.goalSubText}>
@@ -105,12 +142,17 @@ export default function GoalsScreen() {
                     <View
                       style={[
                         styles.progressFill,
-                        { width: `${percent}%` },
+                        {
+                          width: `${percent}%`,
+                          backgroundColor: 'rgba(0,0,0,0.75)',
+                        },
                       ]}
                     />
                   </View>
 
-                  <Text style={styles.percent}>{percent}% complete</Text>
+                  <Text style={styles.percent}>
+                    {goalComplete ? 'Fully funded!' : `${percent}% complete`}
+                  </Text>
                 </>
               ) : (
                 <Text style={styles.goalHint}>No goal set yet</Text>
@@ -192,10 +234,11 @@ const styles = StyleSheet.create({
   },
 
   goalCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 18,
     marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
 
   goalHeader: {
@@ -207,7 +250,6 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 18,
-    backgroundColor: '#F8FFF4',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -221,9 +263,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+
   goalName: {
     fontSize: 22,
     fontWeight: '900',
+    marginRight: 8,
+  },
+
+  completeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    marginTop: 4,
+  },
+
+  completeBadgeText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#111',
   },
 
   goalSubText: {
@@ -249,7 +311,6 @@ const styles = StyleSheet.create({
 
   progressFill: {
     height: '100%',
-    backgroundColor: '#C8FF9B',
     borderRadius: 999,
   },
 

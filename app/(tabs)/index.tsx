@@ -15,6 +15,15 @@ const formatMoney = (amount: number) => {
   });
 };
 
+const hexToRgba = (hex: string, opacity: number) => {
+  const cleanHex = hex.replace('#', '');
+  const red = parseInt(cleanHex.substring(0, 2), 16);
+  const green = parseInt(cleanHex.substring(2, 4), 16);
+  const blue = parseInt(cleanHex.substring(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+};
+
 export default function HomeScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
@@ -64,6 +73,8 @@ export default function HomeScreen() {
           const progress = hasGoal ? Math.min(envelope.balance / goalAmount, 1) : 0;
           const percent = Math.round(progress * 100);
           const icon = envelope.icon ?? '💵';
+          const envelopeColor = envelope.color ?? '#C8FF9B';
+          const envelopeTint = hexToRgba(envelopeColor, 0.18);
           const goalComplete = hasGoal && envelope.balance >= goalAmount;
 
           return (
@@ -71,11 +82,17 @@ export default function HomeScreen() {
               key={envelope.id}
               style={[
                 styles.envelopeCard,
-                goalComplete && styles.completedEnvelopeCard,
+                { backgroundColor: envelopeTint },
+                goalComplete && { borderColor: envelopeColor },
               ]}
               onPress={() => router.push(`/envelope/${envelope.id}`)}
             >
-              <View style={styles.iconBubble}>
+              <View
+                style={[
+                  styles.iconBubble,
+                  { backgroundColor: envelopeColor },
+                ]}
+              >
                 <Text style={styles.iconText}>{icon}</Text>
               </View>
 
@@ -84,7 +101,12 @@ export default function HomeScreen() {
                   <Text style={styles.envelopeName}>{envelope.name}</Text>
 
                   {goalComplete && (
-                    <View style={styles.completeBadge}>
+                    <View
+                      style={[
+                        styles.completeBadge,
+                        { backgroundColor: envelopeColor },
+                      ]}
+                    >
                       <Text style={styles.completeBadgeText}>Goal Met 🎉</Text>
                     </View>
                   )}
@@ -104,8 +126,10 @@ export default function HomeScreen() {
                       <View
                         style={[
                           styles.progressFill,
-                          goalComplete && styles.completedProgressFill,
-                          { width: `${percent}%` },
+                          {
+                            width: `${percent}%`,
+                            backgroundColor: 'rgba(0,0,0,0.75)',
+                          },
                         ]}
                       />
                     </View>
@@ -208,25 +232,20 @@ const styles = StyleSheet.create({
   },
 
   envelopeCard: {
-    backgroundColor: '#FFF',
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-
-  completedEnvelopeCard: {
     borderWidth: 2,
-    borderColor: '#C8FF9B',
+    borderColor: 'transparent',
   },
 
   iconBubble: {
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#F8FFF4',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -253,7 +272,6 @@ const styles = StyleSheet.create({
   },
 
   completeBadge: {
-    backgroundColor: '#C8FF9B',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
@@ -292,12 +310,7 @@ const styles = StyleSheet.create({
 
   progressFill: {
     height: '100%',
-    backgroundColor: '#C8FF9B',
     borderRadius: 999,
-  },
-
-  completedProgressFill: {
-    backgroundColor: '#111',
   },
 
   percentText: {

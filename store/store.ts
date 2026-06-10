@@ -14,6 +14,7 @@ export type Envelope = {
   balance: number;
   goalAmount: number;
   icon: string;
+  color: string;
 };
 
 export type Transaction = {
@@ -46,6 +47,7 @@ type StashStore = {
   editEnvelopeName: (id: string, name: string) => void;
   editEnvelopeGoal: (id: string, goalAmount: number) => void;
   editEnvelopeIcon: (id: string, icon: string) => void;
+  editEnvelopeColor: (id: string, color: string) => void;
   stuffEnvelope: (id: string, amount: number) => void;
   deleteEnvelope: (id: string) => void;
   addIncome: (accountId: string, amount: number) => void;
@@ -138,6 +140,7 @@ export const useStashStore = create<StashStore>()(
               balance: 0,
               goalAmount: 0,
               icon,
+              color: '#C8FF9B',
             },
           ],
         })),
@@ -160,6 +163,13 @@ export const useStashStore = create<StashStore>()(
         set((state) => ({
           envelopes: state.envelopes.map((item) =>
             item.id === id ? { ...item, icon } : item
+          ),
+        })),
+
+      editEnvelopeColor: (id, color) =>
+        set((state) => ({
+          envelopes: state.envelopes.map((item) =>
+            item.id === id ? { ...item, color } : item
           ),
         })),
 
