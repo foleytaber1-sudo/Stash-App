@@ -1,6 +1,7 @@
 import { useStashStore } from '@/store/store';
 import { useState } from 'react';
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,9 +16,11 @@ export default function BalanceScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
+  const deleteTransaction = useStashStore((state) => state.deleteTransaction);
 
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('month');
   const [selectedFilter, setSelectedFilter] = useState<TransactionFilter>('all');
+  const [deleteMode, setDeleteMode] = useState(false);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
@@ -77,6 +80,29 @@ export default function BalanceScreen() {
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const net = moneyIn - moneyOut;
+
+  const canDeleteTransaction = (transaction: (typeof transactions)[number]) => {
+    return (
+      !transaction.locked &&
+      transaction.type !== 'delete-envelope' &&
+      transaction.type !== 'delete-account'
+    );
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    Alert.alert(
+      'Delete transaction?',
+      'This will reverse the balance changes from this transaction.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteTransaction(id),
+        },
+      ]
+    );
+  };
 
   const getTransactionIcon = (type: string) => {
     if (type === 'income') return '💰';
@@ -257,7 +283,29 @@ export default function BalanceScreen() {
         )}
       </View>
 
-      <Text style={styles.section}>Transaction History</Text>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionNoMargin}>Transaction History</Text>
+
+        <TouchableOpacity
+          style={[styles.moreButton, deleteMode && styles.moreButtonActive]}
+          onPress={() => setDeleteMode((current) => !current)}
+        >
+          <Text
+            style={[
+              styles.moreButtonText,
+              deleteMode && styles.moreButtonTextActive,
+            ]}
+          >
+            ⋯
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {deleteMode && (
+        <Text style={styles.deleteModeHint}>
+          Tap the red minus to delete a transaction.
+        </Text>
+      )}
 
       <ScrollView
         horizontal
@@ -288,38 +336,65 @@ export default function BalanceScreen() {
       {visibleTransactions.length === 0 ? (
         <Text style={styles.empty}>No transactions found for this filter.</Text>
       ) : (
-        visibleTransactions.map((transaction) => (
-          <View
-            style={[styles.transaction, getTransactionCardStyle(transaction.type)]}
-            key={transaction.id}
-          >
-            <View style={styles.transactionTopRow}>
-              <View style={styles.transactionIconBubble}>
-                <Text style={styles.transactionIcon}>
-                  {getTransactionIcon(transaction.type)}
-                </Text>
+        visibleTransactions.map((transaction) => {
+          const canDelete = canDeleteTransaction(transaction);
+
+          return (
+            <View style={styles.transactionRow} key={transaction.id}>
+              {deleteMode && canDelete && (
+                <TouchableOpacity
+                  style={styles.minusButton}
+                  onPress={() => handleDeleteTransaction(transaction.id)}
+                >
+                  <Text style={styles.minusButtonText}>−</Text>
+                </TouchableOpacity>
+              )}
+
+              {deleteMode && !canDelete && (
+                <View style={styles.lockedSpace}>
+                  <Text style={styles.lockedIcon}>🔒</Text>
+                </View>
+              )}
+
+              <View
+                style={[
+                  styles.transaction,
+                  getTransactionCardStyle(transaction.type),
+                ]}
+              >
+                <View style={styles.transactionTopRow}>
+                  <View style={styles.transactionIconBubble}>
+                    <Text style={styles.transactionIcon}>
+                      {getTransactionIcon(transaction.type)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionLabel}>
+                      {getTransactionLabel(transaction.type)}
+                    </Text>
+
+                    <Text style={styles.transactionTitle}>
+                      {getTransactionDescription(transaction)}
+                    </Text>
+
+                    <Text style={styles.transactionDate}>
+                      {formatDate(transaction.date)}
+                    </Text>
+
+                    {transaction.locked && (
+                      <Text style={styles.lockedBadge}>Locked transaction</Text>
+                    )}
+                  </View>
+
+                  <Text style={styles.transactionAmount}>
+                    {getAmountText(transaction.type, transaction.amount)}
+                  </Text>
+                </View>
               </View>
-
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionLabel}>
-                  {getTransactionLabel(transaction.type)}
-                </Text>
-
-                <Text style={styles.transactionTitle}>
-                  {getTransactionDescription(transaction)}
-                </Text>
-
-                <Text style={styles.transactionDate}>
-                  {formatDate(transaction.date)}
-                </Text>
-              </View>
-
-              <Text style={styles.transactionAmount}>
-                {getAmountText(transaction.type, transaction.amount)}
-              </Text>
             </View>
-          </View>
-        ))
+          );
+        })
       )}
     </ScrollView>
   );
@@ -384,6 +459,51 @@ const styles = StyleSheet.create({
   netAmount: { fontSize: 24, fontWeight: '900' },
 
   section: { fontSize: 26, fontWeight: '900', marginTop: 30, marginBottom: 12 },
+
+  sectionRow: {
+    marginTop: 30,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  sectionNoMargin: {
+    fontSize: 26,
+    fontWeight: '900',
+  },
+
+  moreButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  moreButtonActive: {
+    backgroundColor: '#111111',
+  },
+
+  moreButtonText: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#111111',
+    marginTop: -8,
+  },
+
+  moreButtonTextActive: {
+    color: '#FFFFFF',
+  },
+
+  deleteModeHint: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#B00020',
+    marginBottom: 12,
+  },
+
   empty: { fontSize: 16, fontWeight: '700', color: '#666' },
 
   breakdownCard: {
@@ -492,10 +612,45 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  transactionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  minusButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  minusButtonText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+    marginTop: -3,
+  },
+
+  lockedSpace: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  lockedIcon: {
+    fontSize: 16,
+  },
+
   transaction: {
+    flex: 1,
     borderRadius: 18,
     padding: 16,
-    marginBottom: 10,
   },
 
   defaultCard: {
@@ -559,10 +714,21 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  lockedBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F2F2F2',
+    color: '#666666',
+    fontSize: 11,
+    fontWeight: '900',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginTop: 8,
+  },
+
   transactionAmount: {
     fontSize: 16,
     fontWeight: '900',
-    marginLeft: 10,
     textAlign: 'right',
     maxWidth: 95,
     color: '#111111',

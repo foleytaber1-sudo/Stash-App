@@ -32,6 +32,7 @@ export type Transaction = {
   toAccountId?: string;
   envelopeId?: string;
   description: string;
+  locked?: boolean;
 };
 
 type StashStore = {
@@ -89,6 +90,7 @@ export const useStashStore = create<StashStore>()(
                       date: now(),
                       accountId,
                       description: `Starting balance for ${name}`,
+                      locked: true,
                     },
                     ...state.transactions,
                   ]
@@ -118,6 +120,7 @@ export const useStashStore = create<StashStore>()(
                     date: now(),
                     accountId: id,
                     description: `Deleted account ${account.name}`,
+                    locked: true,
                   },
                   ...state.transactions,
                 ]
@@ -201,6 +204,7 @@ export const useStashStore = create<StashStore>()(
                     description: `Deleted ${envelope.name} and returned $${envelope.balance.toFixed(
                       2
                     )} to Available To Stuff`,
+                    locked: true,
                   },
                   ...state.transactions,
                 ]
@@ -318,6 +322,7 @@ export const useStashStore = create<StashStore>()(
           if (!transaction) return state;
 
           if (
+            transaction.locked ||
             transaction.type === 'delete-envelope' ||
             transaction.type === 'delete-account'
           ) {

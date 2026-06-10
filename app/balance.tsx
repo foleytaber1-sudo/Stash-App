@@ -1,11 +1,11 @@
 import { useStashStore } from '@/store/store';
 import { useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type TimeFrame = 'week' | 'month' | 'year';
@@ -66,8 +66,12 @@ export default function BalanceScreen() {
         <Text style={styles.label}>TOTAL BALANCE</Text>
         <Text style={styles.total}>${totalBalance.toFixed(2)}</Text>
 
-        <Text style={styles.sub}>Available To Stuff: ${availableToStuff.toFixed(2)}</Text>
-        <Text style={styles.sub}>Stuffed In Envelopes: ${stuffedTotal.toFixed(2)}</Text>
+        <Text style={styles.sub}>
+          Available To Stuff: ${availableToStuff.toFixed(2)}
+        </Text>
+        <Text style={styles.sub}>
+          Stuffed In Envelopes: ${stuffedTotal.toFixed(2)}
+        </Text>
       </View>
 
       <View style={styles.moneyFlowCard}>
@@ -151,9 +155,12 @@ export default function BalanceScreen() {
       ) : (
         transactions.map((transaction) => (
           <View style={styles.transaction} key={transaction.id}>
-            <Text style={styles.transactionTitle}>{transaction.description}</Text>
+            <Text style={styles.transactionTitle}>
+              {transaction.description}
+            </Text>
             <Text style={styles.transactionAmount}>
-              {transaction.type === 'spend' ? '-' : '+'}${transaction.amount.toFixed(2)}
+              {transaction.type === 'spend' ? '-' : '+'}$
+              {transaction.amount.toFixed(2)}
             </Text>
           </View>
         ))
@@ -169,13 +176,16 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '800' },
   total: { fontSize: 42, fontWeight: '900', marginVertical: 8 },
   sub: { fontSize: 16, fontWeight: '700', marginTop: 6 },
+
   moneyFlowCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginTop: 16,
   },
+
   cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 14 },
+
   tabs: {
     backgroundColor: '#F5F5F5',
     borderRadius: 999,
@@ -183,30 +193,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 18,
   },
+
   tab: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 999,
     alignItems: 'center',
   },
+
   activeTab: {
     backgroundColor: '#C8FF9B',
   },
+
   tabText: {
     fontWeight: '800',
     color: '#666',
   },
+
   activeTabText: {
     color: '#000',
   },
+
   flowRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+
   flowLabel: { fontSize: 17, fontWeight: '800' },
   moneyIn: { fontSize: 20, fontWeight: '900' },
   moneyOut: { fontSize: 20, fontWeight: '900' },
+
   netRow: {
     borderTopWidth: 1,
     borderTopColor: '#EEEEEE',
@@ -215,16 +232,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+
   netLabel: { fontSize: 20, fontWeight: '900' },
   netAmount: { fontSize: 24, fontWeight: '900' },
-  section: { fontSize: 26, fontWeight: '900', marginTop: 30, marginBottom: 12 },
+
+  section: {
+    fontSize: 26,
+    fontWeight: '900',
+    marginTop: 30,
+    marginBottom: 12,
+  },
+
   empty: { fontSize: 16, fontWeight: '700', color: '#666' },
+
   transaction: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,
   },
+
   transactionTitle: { fontSize: 16, fontWeight: '800' },
-  transactionAmount: { fontSize: 22, fontWeight: '900', marginTop: 6 },
+
+  transactionAmount: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: 6,
+  },
 });
