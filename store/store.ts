@@ -55,10 +55,32 @@ export type Transaction = {
   locked?: boolean;
 };
 
+export type MonthlyScoreHistory = {
+  id: string;
+  monthKey: string;
+  monthLabel: string;
+  score: number;
+  highestScore: number;
+  lowestScore: number;
+  updatedAt: string;
+};
+
+export type PaydayReminder = {
+  enabled: boolean;
+  frequency: 'weekly' | 'biweekly' | 'monthly';
+  dayOfWeek: number;
+  dayOfMonth: number;
+  hour: number;
+  minute: number;
+  notificationIds: string[];
+};
+
 type StashStore = {
   accounts: Account[];
   envelopes: Envelope[];
   transactions: Transaction[];
+  monthlyScoreHistory: MonthlyScoreHistory[];
+  paydayReminder: PaydayReminder;
 
   themeColor: ThemeColor;
   themeMode: ThemeMode;
@@ -67,6 +89,10 @@ type StashStore = {
   setThemeColor: (color: ThemeColor) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setCurrency: (currency: CurrencyCode) => void;
+
+  saveMonthlyScoreSnapshot: (score: number) => void;
+  clearMonthlyScoreHistory: () => void;
+  setPaydayReminder: (updates: Partial<PaydayReminder>) => void;
 
   addAccount: (
     name: string,
@@ -106,12 +132,37 @@ type StashStore = {
 
 const now = () => new Date().toISOString();
 
+const getMonthKey = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const getMonthLabel = () => {
+  const date = new Date();
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
+const defaultPaydayReminder: PaydayReminder = {
+  enabled: false,
+  frequency: 'biweekly',
+  dayOfWeek: 5,
+  dayOfMonth: 1,
+  hour: 9,
+  minute: 0,
+  notificationIds: [],
+};
+
 export const useStashStore = create<StashStore>()(
   persist(
     (set) => ({
       accounts: [],
       envelopes: [],
       transactions: [],
+      monthlyScoreHistory: [],
+      paydayReminder: defaultPaydayReminder,
 
       themeColor: 'green',
       themeMode: 'light',
@@ -122,6 +173,56 @@ export const useStashStore = create<StashStore>()(
       setThemeMode: (mode) => set({ themeMode: mode }),
 
       setCurrency: (currency) => set({ currency }),
+
+      setPaydayReminder: (updates) =>
+        set((state) => ({
+          paydayReminder: {
+            ...state.paydayReminder,
+            ...updates,
+          },
+        })),
+
+      saveMonthlyScoreSnapshot: (score) =>
+        set((state) => {
+          const cleanScore = Math.max(0, Math.min(100, Math.round(score)));
+          const monthKey = getMonthKey();
+          const existingMonth = state.monthlyScoreHistory.find(
+            (item) => item.monthKey === monthKey
+          );
+
+          if (existingMonth) {
+            return {
+              monthlyScoreHistory: state.monthlyScoreHistory.map((item) =>
+                item.monthKey === monthKey
+                  ? {
+                      ...item,
+                      score: cleanScore,
+                      highestScore: Math.max(item.highestScore, cleanScore),
+                      lowestScore: Math.min(item.lowestScore, cleanScore),
+                      updatedAt: now(),
+                    }
+                  : item
+              ),
+            };
+          }
+
+          return {
+            monthlyScoreHistory: [
+              {
+                id: `${Date.now()}-score-history`,
+                monthKey,
+                monthLabel: getMonthLabel(),
+                score: cleanScore,
+                highestScore: cleanScore,
+                lowestScore: cleanScore,
+                updatedAt: now(),
+              },
+              ...state.monthlyScoreHistory,
+            ],
+          };
+        }),
+
+      clearMonthlyScoreHistory: () => set({ monthlyScoreHistory: [] }),
 
       addAccount: (name, balance, cardColor = '#D9A400', icon = 'card') =>
         set((state) => {
@@ -458,6 +559,8 @@ export const useStashStore = create<StashStore>()(
           accounts: [],
           envelopes: [],
           transactions: [],
+          monthlyScoreHistory: [],
+          paydayReminder: defaultPaydayReminder,
           themeColor: 'green',
           themeMode: 'light',
           currency: 'USD',

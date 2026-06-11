@@ -227,7 +227,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity
           style={[styles.option, { borderTopColor: theme.border }]}
-          onPress={() => comingSoon('Payday reminders')}
+          onPress={() => router.push('/payday-reminder')}
         >
           <Text style={[styles.optionText, { color: theme.text }]}>
             💸 Payday Reminder

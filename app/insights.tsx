@@ -2,6 +2,7 @@ import { formatCurrency } from '@/constants/currency';
 import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -16,16 +17,11 @@ const chartWidth = Math.min(screenWidth - 116, 300);
 const chartHeight = 150;
 const dotSize = 10;
 
-const formatShortDate = (date: Date) => {
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
-};
+const formatShortDate = (date: Date) =>
+  date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-const clamp = (value: number, min: number, max: number) => {
-  return Math.max(min, Math.min(max, value));
-};
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
 const percentChange = (current: number, previous: number) => {
   if (previous === 0 && current === 0) return 0;
@@ -37,6 +33,10 @@ export default function InsightsScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
+  const monthlyScoreHistory = useStashStore((state) => state.monthlyScoreHistory);
+  const saveMonthlyScoreSnapshot = useStashStore(
+    (state) => state.saveMonthlyScoreSnapshot
+  );
   const themeColor = useStashStore((state) => state.themeColor);
   const themeMode = useStashStore((state) => state.themeMode);
   const currency = useStashStore((state) => state.currency);
@@ -202,6 +202,69 @@ export default function InsightsScreen() {
     100
   );
 
+  useEffect(() => {
+    saveMonthlyScoreSnapshot(healthScore);
+  }, [healthScore, saveMonthlyScoreSnapshot]);
+
+  const sortedScoreHistory = [...monthlyScoreHistory].sort((a, b) =>
+    a.monthKey.localeCompare(b.monthKey)
+  );
+
+  const latestScoreHistory = sortedScoreHistory.slice(-6);
+  const currentMonthHistory = sortedScoreHistory[sortedScoreHistory.length - 1];
+  const previousMonthHistory = sortedScoreHistory[sortedScoreHistory.length - 2];
+
+  const monthlyScoreChange =
+    currentMonthHistory && previousMonthHistory
+      ? currentMonthHistory.score - previousMonthHistory.score
+      : 0;
+
+  const bestScoreMonth =
+    sortedScoreHistory.length > 0
+      ? [...sortedScoreHistory].sort((a, b) => b.score - a.score)[0]
+      : undefined;
+
+  const worstScoreMonth =
+    sortedScoreHistory.length > 0
+      ? [...sortedScoreHistory].sort((a, b) => a.score - b.score)[0]
+      : undefined;
+
+  const getHealthInfo = () => {
+    if (healthScore < 50) {
+      return {
+        label: 'Needs Attention',
+        color: '#FFB3B3',
+        message:
+          'Your score is being held back by low income, spending pressure, or missing budget activity.',
+      };
+    }
+
+    if (healthScore < 75) {
+      return {
+        label: 'Getting There',
+        color: '#FFD6A5',
+        message:
+          'You are building momentum. Keep adding income, stuffing envelopes, and controlling spending.',
+      };
+    }
+
+    if (healthScore < 85) {
+      return {
+        label: 'Good',
+        color: '#FFF3A6',
+        message: 'Your money habits are looking steady and organized.',
+      };
+    }
+
+    return {
+      label: 'Excellent',
+      color: '#C8FF9B',
+      message: 'Strong cash flow, healthy budgeting, and positive financial momentum.',
+    };
+  };
+
+  const healthInfo = getHealthInfo();
+
   const scoreBreakdown = [
     {
       label: 'Income Strength',
@@ -252,42 +315,6 @@ export default function InsightsScreen() {
 
   const activeBreakdown = scoreBreakdown.filter((item) => item.value !== 0);
 
-  const getHealthInfo = () => {
-    if (healthScore < 50) {
-      return {
-        label: 'Needs Attention',
-        color: '#FFB3B3',
-        message:
-          'Your score is being held back by low income, spending pressure, or missing budget activity.',
-      };
-    }
-
-    if (healthScore < 75) {
-      return {
-        label: 'Getting There',
-        color: '#FFD6A5',
-        message:
-          'You are building momentum. Keep adding income, stuffing envelopes, and controlling spending.',
-      };
-    }
-
-    if (healthScore < 85) {
-      return {
-        label: 'Good',
-        color: '#FFF3A6',
-        message: 'Your money habits are looking steady and organized.',
-      };
-    }
-
-    return {
-      label: 'Excellent',
-      color: '#C8FF9B',
-      message: 'Strong cash flow, healthy budgeting, and positive financial momentum.',
-    };
-  };
-
-  const healthInfo = getHealthInfo();
-
   const totalSpent = currentSpendingBreakdown.reduce((sum, item) => sum + item.spent, 0);
   const maxSpent = Math.max(...currentSpendingBreakdown.map((item) => item.spent), 1);
   const largestEnvelope = [...envelopes].sort((a, b) => b.balance - a.balance)[0];
@@ -299,6 +326,11 @@ export default function InsightsScreen() {
     averageDailySpend > 0 ? Math.floor(availableToStuff / averageDailySpend) : 0;
 
   const budgetInsights = [
+    monthlyScoreHistory.length > 1 && monthlyScoreChange > 0
+      ? `Your Stash Score is up ${monthlyScoreChange} points from last month.`
+      : monthlyScoreHistory.length > 1 && monthlyScoreChange < 0
+        ? `Your Stash Score is down ${Math.abs(monthlyScoreChange)} points from last month.`
+        : '',
     incomeChange > 15
       ? `Income increased ${Math.round(incomeChange)}% compared to the previous 30 days.`
       : incomeChange < -15
@@ -453,6 +485,101 @@ export default function InsightsScreen() {
         <Text style={styles.healthScore}>{healthScore}</Text>
         <Text style={styles.healthStatus}>{healthInfo.label}</Text>
         <Text style={styles.healthMessage}>{healthInfo.message}</Text>
+      </View>
+
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Monthly Score History</Text>
+
+        {latestScoreHistory.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.subtext }]}>
+            Your monthly score history will appear here as you use Stash.
+          </Text>
+        ) : (
+          <>
+            <View style={styles.historyStatsRow}>
+              <View style={[styles.historyStatBox, { backgroundColor: theme.soft }]}>
+                <Text style={[styles.historyStatLabel, { color: theme.subtext }]}>
+                  Last Month
+                </Text>
+                <Text style={[styles.historyStatValue, { color: theme.text }]}>
+                  {previousMonthHistory ? previousMonthHistory.score : '—'}
+                </Text>
+              </View>
+
+              <View style={[styles.historyStatBox, { backgroundColor: theme.soft }]}>
+                <Text style={[styles.historyStatLabel, { color: theme.subtext }]}>
+                  Change
+                </Text>
+                <Text
+                  style={[
+                    styles.historyStatValue,
+                    {
+                      color:
+                        monthlyScoreChange > 0
+                          ? theme.accent
+                          : monthlyScoreChange < 0
+                            ? '#FF6B6B'
+                            : theme.text,
+                    },
+                  ]}
+                >
+                  {previousMonthHistory
+                    ? `${monthlyScoreChange > 0 ? '+' : ''}${monthlyScoreChange}`
+                    : '—'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.historyBars}>
+              {latestScoreHistory.map((item) => {
+                const barHeight = Math.max(12, Math.round((item.score / 100) * 110));
+
+                return (
+                  <View style={styles.historyBarItem} key={item.id}>
+                    <View style={styles.historyBarTrack}>
+                      <View
+                        style={[
+                          styles.historyBarFill,
+                          {
+                            height: barHeight,
+                            backgroundColor: theme.accent,
+                          },
+                        ]}
+                      />
+                    </View>
+
+                    <Text style={[styles.historyBarScore, { color: theme.text }]}>
+                      {item.score}
+                    </Text>
+                    <Text style={[styles.historyBarLabel, { color: theme.subtext }]}>
+                      {item.monthLabel.split(' ')[0].slice(0, 3)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            <View style={[styles.historySummaryBox, { backgroundColor: theme.soft }]}>
+              <Text style={[styles.historySummaryText, { color: theme.subtext }]}>
+                Best month:{' '}
+                <Text style={[styles.historySummaryStrong, { color: theme.text }]}>
+                  {bestScoreMonth
+                    ? `${bestScoreMonth.monthLabel} (${bestScoreMonth.score})`
+                    : '—'}
+                </Text>
+              </Text>
+
+              <Text style={[styles.historySummaryText, { color: theme.subtext }]}>
+                Lowest month:{' '}
+                <Text style={[styles.historySummaryStrong, { color: theme.text }]}>
+                  {worstScoreMonth
+                    ? `${worstScoreMonth.monthLabel} (${worstScoreMonth.score})`
+                    : '—'}
+                </Text>
+              </Text>
+            </View>
+          </>
+        )}
       </View>
 
       <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
@@ -712,6 +839,70 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 16 },
+
+  historyStatsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+  historyStatBox: {
+    flex: 1,
+    borderRadius: 18,
+    padding: 14,
+  },
+  historyStatLabel: {
+    fontSize: 12,
+    fontWeight: '900',
+    marginBottom: 6,
+  },
+  historyStatValue: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  historyBars: {
+    height: 160,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 4,
+  },
+  historyBarItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  historyBarTrack: {
+    height: 110,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  historyBarFill: {
+    width: 22,
+    borderRadius: 999,
+  },
+  historyBarScore: {
+    fontSize: 13,
+    fontWeight: '900',
+    marginTop: 8,
+  },
+  historyBarLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  historySummaryBox: {
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 16,
+  },
+  historySummaryText: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  historySummaryStrong: {
+    fontWeight: '900',
+  },
+
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',

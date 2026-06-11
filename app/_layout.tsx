@@ -35,6 +35,13 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
+            name="payday-reminder"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
             name="add-envelope"
             options={{
               title: 'Add Envelope',
