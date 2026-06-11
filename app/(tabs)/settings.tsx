@@ -1,3 +1,5 @@
+import { currencies } from '@/constants/currency';
+import { getTheme } from '@/constants/theme';
 import { ThemeColor, useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -13,27 +15,41 @@ import {
 const themes: {
   id: ThemeColor;
   name: string;
-  emoji: string;
-  background: string;
   accent: string;
-  soft: string;
 }[] = [
-  { id: 'green', name: 'Green', emoji: '🌿', background: '#F8FFF4', accent: '#2F7D32', soft: '#EAF8DF' },
-  { id: 'blue', name: 'Blue', emoji: '💧', background: '#F3F8FF', accent: '#2563EB', soft: '#E5EEFF' },
-  { id: 'purple', name: 'Purple', emoji: '🔮', background: '#FAF5FF', accent: '#7E22CE', soft: '#F1E4FF' },
-  { id: 'orange', name: 'Orange', emoji: '🍊', background: '#FFF8EF', accent: '#EA580C', soft: '#FFE8CC' },
-  { id: 'pink', name: 'Pink', emoji: '🌸', background: '#FFF5FA', accent: '#DB2777', soft: '#FFE1F0' },
-  { id: 'yellow', name: 'Yellow', emoji: '🌻', background: '#FFFDF2', accent: '#D4A017', soft: '#FFF4CC' },
+  { id: 'green', name: 'Green', accent: '#2F7D32' },
+  { id: 'blue', name: 'Blue', accent: '#2563EB' },
+  { id: 'purple', name: 'Purple', accent: '#7E22CE' },
+  { id: 'orange', name: 'Orange', accent: '#EA580C' },
+  { id: 'pink', name: 'Pink', accent: '#DB2777' },
+  { id: 'yellow', name: 'Yellow', accent: '#D4A017' },
+  { id: 'red', name: 'Red', accent: '#DC2626' },
+  { id: 'teal', name: 'Teal', accent: '#0F766E' },
+  { id: 'mint', name: 'Mint', accent: '#059669' },
+  { id: 'navy', name: 'Navy', accent: '#1E3A8A' },
+  { id: 'brown', name: 'Brown', accent: '#92400E' },
+  { id: 'gray', name: 'Gray', accent: '#4B5563' },
 ];
 
 export default function SettingsScreen() {
   const [showThemes, setShowThemes] = useState(false);
+  const [showCurrencies, setShowCurrencies] = useState(false);
 
   const resetApp = useStashStore((state) => state.resetApp);
   const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
   const setThemeColor = useStashStore((state) => state.setThemeColor);
+  const setThemeMode = useStashStore((state) => state.setThemeMode);
+  const setCurrency = useStashStore((state) => state.setCurrency);
 
-  const activeTheme = themes.find((theme) => theme.id === themeColor) ?? themes[0];
+  const theme = getTheme(themeColor, themeMode);
+  const activeThemeOption =
+    themes.find((themeOption) => themeOption.id === themeColor) ?? themes[0];
+
+  const activeCurrency =
+    currencies.find((currencyOption) => currencyOption.code === currency) ??
+    currencies[0];
 
   const handleReset = () => {
     Alert.alert(
@@ -52,50 +68,147 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: activeTheme.background }]}
+      style={[styles.container, { backgroundColor: theme.background }]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Settings</Text>
-      <Text style={styles.subtitle}>Customize Stash and manage your app.</Text>
+      <Text style={[styles.title, { color: theme.text }]}>Settings</Text>
+      <Text style={[styles.subtitle, { color: theme.subtext }]}>
+        Customize Stash and manage your app.
+      </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Customize</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Customize</Text>
 
         <TouchableOpacity
-          style={styles.option}
-          onPress={() => setShowThemes(!showThemes)}
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => {
+            setShowThemes(!showThemes);
+            setShowCurrencies(false);
+          }}
         >
           <View style={styles.optionLeft}>
-            <View style={[styles.smallColorCircle, { backgroundColor: activeTheme.accent }]} />
-            <Text style={styles.optionText}>🎨 Theme Color</Text>
+            <View
+              style={[styles.smallColorCircle, { backgroundColor: theme.accent }]}
+            />
+            <Text style={[styles.optionText, { color: theme.text }]}>
+              🎨 Theme Color
+            </Text>
           </View>
 
-          <Text style={[styles.activeThemeText, { color: activeTheme.accent }]}>
-            {activeTheme.name} {showThemes ? '⌃' : '⌄'}
+          <Text style={[styles.activeThemeText, { color: theme.accent }]}>
+            {activeThemeOption.name} {showThemes ? '⌃' : '⌄'}
           </Text>
         </TouchableOpacity>
 
         {showThemes && (
-          <View style={styles.dropdown}>
-            {themes.map((theme) => {
-              const isSelected = theme.id === themeColor;
+          <View style={[styles.dropdown, { borderTopColor: theme.border }]}>
+            <View style={styles.themeGrid}>
+              {themes.map((themeOption) => {
+                const isSelected = themeOption.id === themeColor;
+                const previewTheme = getTheme(themeOption.id, themeMode);
+
+                return (
+                  <TouchableOpacity
+                    key={themeOption.id}
+                    style={[
+                      styles.themeCircleButton,
+                      {
+                        backgroundColor: previewTheme.accent,
+                        borderColor: isSelected ? theme.text : 'transparent',
+                      },
+                    ]}
+                    onPress={() => {
+                      setThemeColor(themeOption.id);
+                      setShowThemes(false);
+                    }}
+                  >
+                    {isSelected && <Text style={styles.themeCheck}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.themeNameText, { color: theme.subtext }]}>
+              Selected: {activeThemeOption.name}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}
+        >
+          <View style={styles.optionLeft}>
+            <Text style={[styles.optionText, { color: theme.text }]}>
+              🌙 Dark Mode
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.togglePill,
+              {
+                backgroundColor: themeMode === 'dark' ? theme.accent : theme.soft,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                { color: themeMode === 'dark' ? '#111111' : theme.subtext },
+              ]}
+            >
+              {themeMode === 'dark' ? 'ON' : 'OFF'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => {
+            setShowCurrencies(!showCurrencies);
+            setShowThemes(false);
+          }}
+        >
+          <View>
+            <Text style={[styles.optionText, { color: theme.text }]}>
+              💵 Currency Selection
+            </Text>
+            <Text style={[styles.optionSubtext, { color: theme.subtext }]}>
+              Changes how money displays across Stash
+            </Text>
+          </View>
+
+          <Text style={[styles.activeThemeText, { color: theme.accent }]}>
+            {activeCurrency.flag} {activeCurrency.code} {showCurrencies ? '⌃' : '⌄'}
+          </Text>
+        </TouchableOpacity>
+
+        {showCurrencies && (
+          <View style={[styles.dropdown, { borderTopColor: theme.border }]}>
+            {currencies.map((currencyOption) => {
+              const isSelected = currencyOption.code === currency;
 
               return (
                 <TouchableOpacity
-                  key={theme.id}
+                  key={currencyOption.code}
                   style={[
                     styles.dropdownOption,
-                    { backgroundColor: isSelected ? theme.soft : '#FFFFFF' },
+                    {
+                      backgroundColor: isSelected ? theme.soft : theme.card,
+                    },
                   ]}
                   onPress={() => {
-                    setThemeColor(theme.id);
-                    setShowThemes(false);
+                    setCurrency(currencyOption.code);
+                    setShowCurrencies(false);
                   }}
                 >
-                  <View style={styles.optionLeft}>
-                    <View style={[styles.smallColorCircle, { backgroundColor: theme.accent }]} />
-                    <Text style={styles.dropdownText}>
-                      {theme.emoji} {theme.name}
+                  <View>
+                    <Text style={[styles.dropdownText, { color: theme.text }]}>
+                      {currencyOption.flag} {currencyOption.name}
+                    </Text>
+                    <Text style={[styles.currencySubtext, { color: theme.subtext }]}>
+                      {currencyOption.code} • {currencyOption.symbol}
                     </Text>
                   </View>
 
@@ -107,78 +220,150 @@ export default function SettingsScreen() {
             })}
           </View>
         )}
+      </View>
 
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Dark mode')}>
-          <Text style={styles.optionText}>🌙 Dark Mode</Text>
-          <Text style={styles.arrow}>›</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Notifications</Text>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Payday reminders')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            💸 Payday Reminder
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Overspending alerts')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            🚨 Overspending Alerts
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Budget Help</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Security</Text>
 
-        <TouchableOpacity style={styles.option} onPress={() => router.push('/how-to')}>
-          <Text style={styles.optionText}>📘 How To Use Stash</Text>
-          <Text style={styles.arrow}>›</Text>
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('PIN lock')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>🔐 PIN Lock</Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Budget tips')}>
-          <Text style={styles.optionText}>💡 Budget Tips</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Support</Text>
-
-        <TouchableOpacity style={styles.option} onPress={() => router.push('/report-bug')}>
-          <Text style={styles.optionText}>🐛 Report a Bug</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Feature requests')}>
-          <Text style={styles.optionText}>✨ Request a Feature</Text>
-          <Text style={styles.arrow}>›</Text>
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Face ID')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>🙂 Face ID</Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Security</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Data</Text>
 
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('PIN lock')}>
-          <Text style={styles.optionText}>🔐 PIN Lock</Text>
-          <Text style={styles.arrow}>›</Text>
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Backup and restore')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            ☁️ Backup / Restore
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Face ID')}>
-          <Text style={styles.optionText}>🙂 Face ID</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Data</Text>
-
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Backup and restore')}>
-          <Text style={styles.optionText}>☁️ Backup / Restore</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.option} onPress={() => comingSoon('Transaction export')}>
-          <Text style={styles.optionText}>📤 Export Transactions</Text>
-          <Text style={styles.arrow}>›</Text>
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Transaction export')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            📤 Export Transactions
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.aboutCard, { backgroundColor: activeTheme.soft }]}>
-        <Text style={styles.aboutTitle}>About Stash</Text>
-        <Text style={styles.aboutText}>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Help & Support</Text>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => router.push('/help-center')}
+        >
+          <View>
+            <Text style={[styles.optionText, { color: theme.text }]}>
+              ❓ FAQ / Help Center
+            </Text>
+            <Text style={[styles.optionSubtext, { color: theme.subtext }]}>
+              Help, bug reports, feature requests, and support
+            </Text>
+          </View>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>About</Text>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon("What's new")}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>🆕 What’s New</Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Privacy policy')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            🔒 Privacy Policy
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Terms of service')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>
+            📄 Terms of Service
+          </Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Rate Stash')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>⭐ Rate Stash</Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.option, { borderTopColor: theme.border }]}
+          onPress={() => comingSoon('Share Stash')}
+        >
+          <Text style={[styles.optionText, { color: theme.text }]}>📲 Share Stash</Text>
+          <Text style={[styles.arrow, { color: theme.subtext }]}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.aboutCard, { backgroundColor: theme.soft }]}>
+        <Text style={[styles.aboutTitle, { color: theme.text }]}>About Stash</Text>
+        <Text style={[styles.aboutText, { color: theme.subtext }]}>
           Stash is a virtual cash-stuffing app built to help you organize money into
           envelopes, track spending, and stay motivated with goals and insights.
         </Text>
-        <Text style={[styles.version, { color: activeTheme.accent }]}>
-          Version 1.0.0
-        </Text>
+        <Text style={[styles.version, { color: theme.accent }]}>Version 1.0.0</Text>
       </View>
 
       <View style={styles.dangerCard}>
@@ -205,18 +390,15 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     marginTop: 60,
     marginBottom: 4,
-    color: '#111111',
   },
 
   subtitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#666666',
     marginBottom: 22,
   },
 
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginBottom: 14,
@@ -230,13 +412,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     marginBottom: 8,
-    color: '#111111',
   },
 
   option: {
     paddingVertical: 15,
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -251,7 +431,13 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#111111',
+  },
+
+  optionSubtext: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+    maxWidth: 260,
   },
 
   activeThemeText: {
@@ -267,9 +453,37 @@ const styles = StyleSheet.create({
 
   dropdown: {
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
     paddingTop: 8,
     paddingBottom: 8,
+  },
+
+  themeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+
+  themeCircleButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    borderWidth: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  themeCheck: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+
+  themeNameText: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 4,
   },
 
   dropdownOption: {
@@ -284,7 +498,12 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#111111',
+  },
+
+  currencySubtext: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 3,
   },
 
   checkmark: {
@@ -292,10 +511,22 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
+  togglePill: {
+    minWidth: 54,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
+
+  toggleText: {
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
   arrow: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#777777',
   },
 
   aboutCard: {
@@ -308,13 +539,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     marginBottom: 8,
-    color: '#111111',
   },
 
   aboutText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#444444',
     lineHeight: 22,
   },
 

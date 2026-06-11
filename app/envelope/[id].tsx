@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/constants/currency';
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -27,44 +29,10 @@ const ENVELOPE_COLORS = [
 ];
 
 const ICONS = [
-  '💰',
-  '🏦',
-  '🏠',
-  '🏡',
-  '🚗',
-  '⛽',
-  '✈️',
-  '🛫',
-  '🎄',
-  '🎁',
-  '🎂',
-  '🐶',
-  '👶',
-  '💍',
-  '🎓',
-  '💻',
-  '📱',
-  '🎮',
-  '🍕',
-  '🛒',
-  '☕',
-  '🎟️',
-  '🏋️',
-  '🩺',
-  '👕',
-  '🔧',
-  '💸',
-  '🚤',
-  '📦',
-  '📈',
+  '💰', '🏦', '🏠', '🏡', '🚗', '⛽', '✈️', '🛫', '🎄', '🎁',
+  '🎂', '🐶', '👶', '💍', '🎓', '💻', '📱', '🎮', '🍕', '🛒',
+  '☕', '🎟️', '🏋️', '🩺', '👕', '🔧', '💸', '🚤', '📦', '📈',
 ];
-
-const formatMoney = (amount: number) => {
-  return amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
 
 export default function EnvelopeScreen() {
   const { id } = useLocalSearchParams();
@@ -78,6 +46,11 @@ export default function EnvelopeScreen() {
   const editEnvelopeName = useStashStore((state) => state.editEnvelopeName);
   const editEnvelopeColor = useStashStore((state) => state.editEnvelopeColor);
   const editEnvelopeIcon = useStashStore((state) => state.editEnvelopeIcon);
+  const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
+
+  const theme = getTheme(themeColor, themeMode);
 
   const [stuffAmount, setStuffAmount] = useState('');
   const [spendAmount, setSpendAmount] = useState('');
@@ -101,8 +74,8 @@ export default function EnvelopeScreen() {
 
   if (!envelope) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Envelope not found</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Envelope not found</Text>
       </View>
     );
   }
@@ -171,8 +144,9 @@ export default function EnvelopeScreen() {
   const handleDelete = () => {
     Alert.alert(
       'Delete Envelope?',
-      `This will delete ${envelope.name} and return $${formatMoney(
-        envelope.balance
+      `This will delete ${envelope.name} and return ${formatCurrency(
+        envelope.balance,
+        currency
       )} to Available To Stuff.`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -189,14 +163,14 @@ export default function EnvelopeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, { color: theme.text }]}>
           {icon} {envelope.name}
         </Text>
 
         <TouchableOpacity
-          style={styles.settingsButton}
+          style={[styles.settingsButton, { backgroundColor: theme.card }]}
           onPress={() => {
             setShowSettings(!showSettings);
             setIsEditingName(false);
@@ -205,17 +179,17 @@ export default function EnvelopeScreen() {
             setNewEnvelopeName('');
           }}
         >
-          <Text style={styles.settingsDots}>⋯</Text>
+          <Text style={[styles.settingsDots, { color: theme.text }]}>⋯</Text>
         </TouchableOpacity>
       </View>
 
       {showSettings && (
-        <View style={styles.settingsCard}>
-          <Text style={styles.cardTitle}>Envelope Settings</Text>
+        <View style={[styles.settingsCard, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Envelope Settings</Text>
 
           {!isEditingName ? (
             <TouchableOpacity
-              style={styles.settingOption}
+              style={[styles.settingOption, { backgroundColor: theme.soft }]}
               onPress={() => {
                 setNewEnvelopeName(envelope.name);
                 setIsEditingName(true);
@@ -223,38 +197,46 @@ export default function EnvelopeScreen() {
                 setShowColorPicker(false);
               }}
             >
-              <Text style={styles.settingOptionText}>Edit Name</Text>
+              <Text style={[styles.settingOptionText, { color: theme.text }]}>Edit Name</Text>
             </TouchableOpacity>
           ) : (
             <>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.soft,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  },
+                ]}
                 placeholder="Envelope name"
+                placeholderTextColor={theme.subtext}
                 value={newEnvelopeName}
                 onChangeText={setNewEnvelopeName}
               />
 
               <TouchableOpacity
-                style={styles.greenButton}
+                style={[styles.greenButton, { backgroundColor: theme.button }]}
                 onPress={handleSaveEnvelopeName}
               >
-                <Text style={styles.buttonText}>Save Name</Text>
+                <Text style={[styles.buttonText, { color: theme.text }]}>Save Name</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.cancelButton, { backgroundColor: theme.soft }]}
                 onPress={() => {
                   setIsEditingName(false);
                   setNewEnvelopeName('');
                 }}
               >
-                <Text style={styles.cancelText}>Cancel Edit</Text>
+                <Text style={[styles.cancelText, { color: theme.text }]}>Cancel Edit</Text>
               </TouchableOpacity>
             </>
           )}
 
           <TouchableOpacity
-            style={styles.settingOption}
+            style={[styles.settingOption, { backgroundColor: theme.soft }]}
             onPress={() => {
               setShowIconPicker(!showIconPicker);
               setShowColorPicker(false);
@@ -262,7 +244,7 @@ export default function EnvelopeScreen() {
               setNewEnvelopeName('');
             }}
           >
-            <Text style={styles.settingOptionText}>Change Icon</Text>
+            <Text style={[styles.settingOptionText, { color: theme.text }]}>Change Icon</Text>
           </TouchableOpacity>
 
           {showIconPicker && (
@@ -272,9 +254,10 @@ export default function EnvelopeScreen() {
                   key={item}
                   style={[
                     styles.iconButton,
+                    { backgroundColor: theme.soft },
                     icon === item && {
                       backgroundColor: envelopeColor,
-                      borderColor: '#111',
+                      borderColor: theme.text,
                     },
                   ]}
                   onPress={() => editEnvelopeIcon(envelope.id, item)}
@@ -286,7 +269,7 @@ export default function EnvelopeScreen() {
           )}
 
           <TouchableOpacity
-            style={styles.settingOption}
+            style={[styles.settingOption, { backgroundColor: theme.soft }]}
             onPress={() => {
               setShowColorPicker(!showColorPicker);
               setShowIconPicker(false);
@@ -294,7 +277,7 @@ export default function EnvelopeScreen() {
               setNewEnvelopeName('');
             }}
           >
-            <Text style={styles.settingOptionText}>Change Color</Text>
+            <Text style={[styles.settingOptionText, { color: theme.text }]}>Change Color</Text>
           </TouchableOpacity>
 
           {showColorPicker && (
@@ -321,15 +304,18 @@ export default function EnvelopeScreen() {
 
       <View style={[styles.balanceCard, { backgroundColor: envelopeColor }]}>
         <Text style={styles.label}>ENVELOPE BALANCE</Text>
-        <Text style={styles.balance}>${formatMoney(envelope.balance)}</Text>
+        <Text style={styles.balance}>
+          {formatCurrency(envelope.balance, currency)}
+        </Text>
         <Text style={styles.available}>
-          Available to Stuff: ${formatMoney(availableToStuff)}
+          Available to Stuff: {formatCurrency(availableToStuff, currency)}
         </Text>
 
         {hasGoal && (
           <View style={styles.goalSection}>
             <Text style={styles.goalText}>
-              Goal: ${formatMoney(envelope.balance)} / ${formatMoney(goalAmount)}
+              Goal: {formatCurrency(envelope.balance, currency)} /{' '}
+              {formatCurrency(goalAmount, currency)}
             </Text>
 
             <View style={styles.progressTrack}>
@@ -341,78 +327,114 @@ export default function EnvelopeScreen() {
         )}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Stuff Money</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Stuff Money</Text>
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.soft,
+              color: theme.text,
+              borderColor: theme.border,
+            },
+          ]}
           placeholder="0.00"
+          placeholderTextColor={theme.subtext}
           keyboardType="decimal-pad"
           value={stuffAmount}
           onChangeText={setStuffAmount}
         />
 
-        <TouchableOpacity style={styles.greenButton} onPress={handleStuff}>
-          <Text style={styles.buttonText}>Stuff Envelope</Text>
+        <TouchableOpacity
+          style={[styles.greenButton, { backgroundColor: theme.button }]}
+          onPress={handleStuff}
+        >
+          <Text style={[styles.buttonText, { color: theme.text }]}>Stuff Envelope</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Spend Money</Text>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Spend Money</Text>
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.soft,
+              color: theme.text,
+              borderColor: theme.border,
+            },
+          ]}
           placeholder="0.00"
+          placeholderTextColor={theme.subtext}
           keyboardType="decimal-pad"
           value={spendAmount}
           onChangeText={setSpendAmount}
         />
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.soft,
+              color: theme.text,
+              borderColor: theme.border,
+            },
+          ]}
           placeholder="Note, like Walmart or Costco"
+          placeholderTextColor={theme.subtext}
           value={spendNote}
           onChangeText={setSpendNote}
         />
 
-        <Text style={styles.smallLabel}>Paid From</Text>
+        <Text style={[styles.smallLabel, { color: theme.text }]}>Paid From</Text>
 
         <TouchableOpacity
-          style={styles.dropdownButton}
+          style={[styles.dropdownButton, { backgroundColor: theme.soft }]}
           onPress={() => setShowAccountDropdown(!showAccountDropdown)}
         >
-          <Text style={styles.dropdownText}>
+          <Text style={[styles.dropdownText, { color: theme.text }]}>
             {selectedAccount
-              ? `${selectedAccount.name} • $${formatMoney(selectedAccount.balance)}`
+              ? `${selectedAccount.name} • ${formatCurrency(
+                  selectedAccount.balance,
+                  currency
+                )}`
               : 'Choose account'}
           </Text>
 
-          <Text style={styles.dropdownArrow}>
+          <Text style={[styles.dropdownArrow, { color: theme.text }]}>
             {showAccountDropdown ? '⌃' : '⌄'}
           </Text>
         </TouchableOpacity>
 
         {showAccountDropdown && (
-          <View style={styles.dropdownList}>
+          <View style={[styles.dropdownList, { backgroundColor: theme.soft }]}>
             {accounts.length === 0 ? (
-              <Text style={styles.emptyDropdownText}>No accounts yet.</Text>
+              <Text style={[styles.emptyDropdownText, { color: theme.subtext }]}>
+                No accounts yet.
+              </Text>
             ) : (
               accounts.map((account) => (
                 <TouchableOpacity
                   key={account.id}
                   style={[
                     styles.dropdownItem,
-                    selectedSpendAccount === account.id &&
-                      styles.selectedDropdownItem,
+                    { backgroundColor: theme.card },
+                    selectedSpendAccount === account.id && {
+                      backgroundColor: theme.button,
+                    },
                   ]}
                   onPress={() => {
                     setSelectedSpendAccount(account.id);
                     setShowAccountDropdown(false);
                   }}
                 >
-                  <Text style={styles.dropdownItemName}>{account.name}</Text>
-                  <Text style={styles.dropdownItemBalance}>
-                    ${formatMoney(account.balance)}
+                  <Text style={[styles.dropdownItemName, { color: theme.text }]}>
+                    {account.name}
+                  </Text>
+                  <Text style={[styles.dropdownItemBalance, { color: theme.subtext }]}>
+                    {formatCurrency(account.balance, currency)}
                   </Text>
                 </TouchableOpacity>
               ))
@@ -425,27 +447,36 @@ export default function EnvelopeScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>History</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>History</Text>
 
       {envelopeTransactions.length === 0 ? (
-        <Text style={styles.empty}>No envelope history yet.</Text>
+        <Text style={[styles.empty, { color: theme.subtext }]}>
+          No envelope history yet.
+        </Text>
       ) : (
         envelopeTransactions.map((transaction) => (
-          <View key={transaction.id} style={styles.transaction}>
-            <Text style={styles.transactionText}>{transaction.description}</Text>
-            <Text style={styles.transactionAmount}>
+          <View
+            key={transaction.id}
+            style={[styles.transaction, { backgroundColor: theme.card }]}
+          >
+            <Text style={[styles.transactionText, { color: theme.text }]}>
+              {transaction.description}
+            </Text>
+            <Text style={[styles.transactionAmount, { color: theme.text }]}>
               {transaction.type === 'spend' ? '-' : '+'}
-              ${formatMoney(transaction.amount)}
+              {formatCurrency(transaction.amount, currency)}
             </Text>
           </View>
         ))
       )}
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FFF4', padding: 20 },
+  container: { flex: 1, padding: 20 },
 
   headerRow: {
     flexDirection: 'row',
@@ -465,7 +496,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
@@ -478,14 +508,12 @@ const styles = StyleSheet.create({
   },
 
   settingsCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     marginBottom: 16,
   },
 
   settingOption: {
-    backgroundColor: '#F5F5F5',
     padding: 14,
     borderRadius: 14,
     marginBottom: 10,
@@ -502,9 +530,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  label: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  balance: { fontSize: 42, fontWeight: '900', marginTop: 6 },
-  available: { fontSize: 16, fontWeight: '700', marginTop: 8 },
+  label: { fontSize: 12, fontWeight: '900', letterSpacing: 1, color: '#111111' },
+  balance: { fontSize: 42, fontWeight: '900', marginTop: 6, color: '#111111' },
+  available: { fontSize: 16, fontWeight: '700', marginTop: 8, color: '#333333' },
 
   goalSection: {
     backgroundColor: 'rgba(255,255,255,0.55)',
@@ -517,6 +545,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
     marginBottom: 8,
+    color: '#111111',
   },
 
   progressTrack: {
@@ -535,12 +564,11 @@ const styles = StyleSheet.create({
   percentText: {
     fontSize: 12,
     fontWeight: '900',
-    color: '#333',
+    color: '#333333',
     marginTop: 6,
   },
 
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
@@ -549,15 +577,14 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 20, fontWeight: '900', marginBottom: 12 },
 
   input: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 14,
     padding: 14,
     fontSize: 18,
     marginBottom: 12,
+    borderWidth: 1,
   },
 
   greenButton: {
-    backgroundColor: '#C8FF9B',
     padding: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -572,7 +599,6 @@ const styles = StyleSheet.create({
   },
 
   cancelButton: {
-    backgroundColor: '#F5F5F5',
     padding: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -589,14 +615,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  deleteText: { fontWeight: '900', fontSize: 16 },
+  deleteText: { fontWeight: '900', fontSize: 16, color: '#7A0000' },
 
   buttonText: { fontWeight: '900', fontSize: 16 },
 
   smallLabel: { fontSize: 15, fontWeight: '900', marginBottom: 8 },
 
   dropdownButton: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
@@ -608,34 +633,26 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#333',
   },
 
   dropdownArrow: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#333',
   },
 
   dropdownList: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 14,
     padding: 8,
     marginBottom: 10,
   },
 
   dropdownItem: {
-    backgroundColor: '#FFFFFF',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-
-  selectedDropdownItem: {
-    backgroundColor: '#C8FF9B',
   },
 
   dropdownItemName: {
@@ -646,12 +663,10 @@ const styles = StyleSheet.create({
   dropdownItemBalance: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#555',
   },
 
   emptyDropdownText: {
     fontWeight: '800',
-    color: '#666',
     padding: 10,
   },
 
@@ -666,7 +681,6 @@ const styles = StyleSheet.create({
     width: '15%',
     aspectRatio: 1,
     borderRadius: 14,
-    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -705,10 +719,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  empty: { fontSize: 16, fontWeight: '700', color: '#666' },
+  empty: { fontSize: 16, fontWeight: '700' },
 
   transaction: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,

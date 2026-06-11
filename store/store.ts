@@ -1,3 +1,4 @@
+import { CurrencyCode } from '@/constants/currency';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -8,12 +9,22 @@ export type ThemeColor =
   | 'purple'
   | 'orange'
   | 'pink'
-  | 'yellow';
+  | 'yellow'
+  | 'red'
+  | 'teal'
+  | 'mint'
+  | 'navy'
+  | 'brown'
+  | 'gray';
+
+export type ThemeMode = 'light' | 'dark';
 
 export type Account = {
   id: string;
   name: string;
   balance: number;
+  cardColor: string;
+  icon: string;
 };
 
 export type Envelope = {
@@ -50,9 +61,19 @@ type StashStore = {
   transactions: Transaction[];
 
   themeColor: ThemeColor;
-  setThemeColor: (color: ThemeColor) => void;
+  themeMode: ThemeMode;
+  currency: CurrencyCode;
 
-  addAccount: (name: string, balance: number) => void;
+  setThemeColor: (color: ThemeColor) => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  setCurrency: (currency: CurrencyCode) => void;
+
+  addAccount: (
+    name: string,
+    balance: number,
+    cardColor?: string,
+    icon?: string
+  ) => void;
   editAccountName: (id: string, name: string) => void;
   deleteAccount: (id: string) => void;
 
@@ -93,18 +114,24 @@ export const useStashStore = create<StashStore>()(
       transactions: [],
 
       themeColor: 'green',
+      themeMode: 'light',
+      currency: 'USD',
 
-      setThemeColor: (color) =>
-        set({
-          themeColor: color,
-        }),
+      setThemeColor: (color) => set({ themeColor: color }),
 
-      addAccount: (name, balance) =>
+      setThemeMode: (mode) => set({ themeMode: mode }),
+
+      setCurrency: (currency) => set({ currency }),
+
+      addAccount: (name, balance, cardColor = '#D9A400', icon = 'card') =>
         set((state) => {
           const accountId = Date.now().toString();
 
           return {
-            accounts: [...state.accounts, { id: accountId, name, balance }],
+            accounts: [
+              ...state.accounts,
+              { id: accountId, name, balance, cardColor, icon },
+            ],
             transactions:
               balance > 0
                 ? [
@@ -196,10 +223,7 @@ export const useStashStore = create<StashStore>()(
           ),
         })),
 
-      reorderEnvelopes: (envelopes) =>
-        set({
-          envelopes,
-        }),
+      reorderEnvelopes: (envelopes) => set({ envelopes }),
 
       stuffEnvelope: (id, amount) =>
         set((state) => {
@@ -239,7 +263,7 @@ export const useStashStore = create<StashStore>()(
                     amount: envelope.balance,
                     date: now(),
                     envelopeId: id,
-                    description: `Deleted ${envelope.name} and returned $${envelope.balance.toFixed(
+                    description: `Deleted ${envelope.name} and returned ${envelope.balance.toFixed(
                       2
                     )} to Available To Stuff`,
                     locked: true,
@@ -435,6 +459,8 @@ export const useStashStore = create<StashStore>()(
           envelopes: [],
           transactions: [],
           themeColor: 'green',
+          themeMode: 'light',
+          currency: 'USD',
         }),
     }),
     {

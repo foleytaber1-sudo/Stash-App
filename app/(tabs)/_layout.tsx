@@ -6,16 +6,17 @@ import React from 'react';
 
 export default function TabLayout() {
   const themeColor = useStashStore((state) => state.themeColor);
-  const theme = getTheme(themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const theme = getTheme(themeColor, themeMode);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.accent,
-        tabBarInactiveTintColor: '#999999',
+        tabBarInactiveTintColor: theme.subtext,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.card,
           borderTopWidth: 0,
           height: 70,
           paddingBottom: 8,

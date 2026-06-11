@@ -1,3 +1,4 @@
+import { formatCurrency } from '@/constants/currency';
 import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
@@ -15,21 +16,16 @@ import {
 type TimeFrame = 'week' | 'month' | 'year';
 type TransactionFilter = 'all' | 'income' | 'spend' | 'stuff' | 'transfer';
 
-const formatMoney = (amount: number) => {
-  return amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
 export default function ActivityScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
   const deleteTransaction = useStashStore((state) => state.deleteTransaction);
   const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
 
-  const theme = getTheme(themeColor);
+  const theme = getTheme(themeColor, themeMode);
 
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('month');
   const [selectedFilter, setSelectedFilter] = useState<TransactionFilter>('all');
@@ -175,23 +171,26 @@ export default function ActivityScreen() {
   };
 
   const getTransactionCardStyle = (type: string) => {
-    if (type === 'income') return styles.incomeCard;
-    if (type === 'spend') return styles.spendCard;
+    if (type === 'income') return { backgroundColor: themeMode === 'dark' ? '#193321' : '#EAF8EE' };
+    if (type === 'spend') return { backgroundColor: themeMode === 'dark' ? '#3A1D1D' : '#FDECEC' };
     if (type === 'stuff') return { backgroundColor: theme.soft };
-    if (type === 'transfer') return styles.transferCard;
-    if (type === 'delete-envelope') return styles.deleteCard;
-    if (type === 'delete-account') return styles.deleteCard;
-    return styles.defaultCard;
+    if (type === 'transfer') return { backgroundColor: themeMode === 'dark' ? theme.card : '#F2F2F2' };
+    if (type === 'delete-envelope') return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
+    if (type === 'delete-account') return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
+    return { backgroundColor: theme.card };
   };
 
   const getAmountText = (type: string, amount: number) => {
-    if (type === 'income') return `+$${formatMoney(amount)}`;
-    if (type === 'spend') return `-$${formatMoney(amount)}`;
-    if (type === 'stuff') return `+$${formatMoney(amount)}`;
-    if (type === 'transfer') return `$${formatMoney(amount)} moved`;
-    if (type === 'delete-account') return `-$${formatMoney(amount)}`;
-    if (type === 'delete-envelope') return `+$${formatMoney(amount)}`;
-    return `$${formatMoney(amount)}`;
+    const formattedAmount = formatCurrency(amount, currency);
+
+    if (type === 'income') return `+${formattedAmount}`;
+    if (type === 'spend') return `-${formattedAmount}`;
+    if (type === 'stuff') return `+${formattedAmount}`;
+    if (type === 'transfer') return `${formattedAmount} moved`;
+    if (type === 'delete-account') return `-${formattedAmount}`;
+    if (type === 'delete-envelope') return `+${formattedAmount}`;
+
+    return formattedAmount;
   };
 
   const formatDate = (date: string) => {
@@ -215,7 +214,7 @@ export default function ActivityScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Activity</Text>
+      <Text style={[styles.title, { color: theme.text }]}>Activity</Text>
 
       <View
         style={[
@@ -223,11 +222,17 @@ export default function ActivityScreen() {
           { backgroundColor: theme.button, borderColor: theme.accent },
         ]}
       >
-        <Text style={styles.label}>ACTIVITY OVERVIEW</Text>
-        <Text style={styles.total}>${formatMoney(totalBalance)}</Text>
+        <Text style={[styles.label, { color: theme.text }]}>ACTIVITY OVERVIEW</Text>
+        <Text style={[styles.total, { color: theme.text }]}>
+          {formatCurrency(totalBalance, currency)}
+        </Text>
 
-        <Text style={styles.sub}>Available Cash: ${formatMoney(availableToStuff)}</Text>
-        <Text style={styles.sub}>Envelope Funds: ${formatMoney(stuffedTotal)}</Text>
+        <Text style={[styles.sub, { color: theme.text }]}>
+          Available Cash: {formatCurrency(availableToStuff, currency)}
+        </Text>
+        <Text style={[styles.sub, { color: theme.text }]}>
+          Envelope Funds: {formatCurrency(stuffedTotal, currency)}
+        </Text>
       </View>
 
       <TouchableOpacity
@@ -245,9 +250,17 @@ export default function ActivityScreen() {
       </TouchableOpacity>
 
       <View style={[styles.moneyFlowCard, { backgroundColor: theme.soft }]}>
-        <Text style={styles.cardTitle}>Money Flow</Text>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Money Flow</Text>
 
-        <View style={styles.tabs}>
+        <View
+          style={[
+            styles.tabs,
+            {
+              backgroundColor:
+                themeMode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)',
+            },
+          ]}
+        >
           {(['week', 'month', 'year'] as TimeFrame[]).map((timeFrame) => (
             <TouchableOpacity
               key={timeFrame}
@@ -262,9 +275,7 @@ export default function ActivityScreen() {
               <Text
                 style={[
                   styles.tabText,
-                  selectedTimeFrame === timeFrame && {
-                    color: theme.accent,
-                  },
+                  { color: selectedTimeFrame === timeFrame ? theme.accent : theme.subtext },
                 ]}
               >
                 {timeFrame.charAt(0).toUpperCase() + timeFrame.slice(1)}
@@ -274,35 +285,42 @@ export default function ActivityScreen() {
         </View>
 
         <View style={styles.flowRow}>
-          <Text style={styles.flowLabel}>Money In</Text>
+          <Text style={[styles.flowLabel, { color: theme.text }]}>Money In</Text>
           <Text style={[styles.moneyIn, { color: theme.accent }]}>
-            +${formatMoney(moneyIn)}
+            +{formatCurrency(moneyIn, currency)}
           </Text>
         </View>
 
         <View style={styles.flowRow}>
-          <Text style={styles.flowLabel}>Money Out</Text>
-          <Text style={styles.moneyOut}>-${formatMoney(moneyOut)}</Text>
+          <Text style={[styles.flowLabel, { color: theme.text }]}>Money Out</Text>
+          <Text style={styles.moneyOut}>-{formatCurrency(moneyOut, currency)}</Text>
         </View>
 
-        <View style={styles.netRow}>
-          <Text style={styles.netLabel}>Net</Text>
-          <Text style={[styles.netAmount, { color: net >= 0 ? theme.accent : '#B00020' }]}>
-            {net >= 0 ? '+' : '-'}${formatMoney(Math.abs(net))}
+        <View style={[styles.netRow, { borderTopColor: theme.border }]}>
+          <Text style={[styles.netLabel, { color: theme.text }]}>Net</Text>
+          <Text style={[styles.netAmount, { color: net >= 0 ? theme.accent : '#FF6B6B' }]}>
+            {net >= 0 ? '+' : '-'}
+            {formatCurrency(Math.abs(net), currency)}
           </Text>
         </View>
       </View>
 
-      <Text style={styles.section}>Spending Breakdown</Text>
+      <Text style={[styles.section, { color: theme.text }]}>Spending Breakdown</Text>
 
       <View style={[styles.breakdownCard, { backgroundColor: theme.soft }]}>
         {spendingBreakdown.length === 0 ? (
-          <Text style={styles.breakdownEmpty}>No spending for this time period yet.</Text>
+          <Text style={[styles.breakdownEmpty, { color: theme.subtext }]}>
+            No spending for this time period yet.
+          </Text>
         ) : (
           <>
             <View style={styles.breakdownTotalRow}>
-              <Text style={styles.breakdownTotalLabel}>Total Spent</Text>
-              <Text style={styles.breakdownTotalAmount}>${formatMoney(totalSpent)}</Text>
+              <Text style={[styles.breakdownTotalLabel, { color: theme.text }]}>
+                Total Spent
+              </Text>
+              <Text style={[styles.breakdownTotalAmount, { color: theme.text }]}>
+                {formatCurrency(totalSpent, currency)}
+              </Text>
             </View>
 
             {spendingBreakdown.map((item) => {
@@ -314,13 +332,27 @@ export default function ActivityScreen() {
                   <View style={styles.breakdownTopRow}>
                     <View style={styles.breakdownNameRow}>
                       <Text style={styles.breakdownIcon}>{item.icon}</Text>
-                      <Text style={styles.breakdownName}>{item.name}</Text>
+                      <Text style={[styles.breakdownName, { color: theme.text }]}>
+                        {item.name}
+                      </Text>
                     </View>
 
-                    <Text style={styles.breakdownAmount}>${formatMoney(item.spent)}</Text>
+                    <Text style={[styles.breakdownAmount, { color: theme.text }]}>
+                      {formatCurrency(item.spent, currency)}
+                    </Text>
                   </View>
 
-                  <View style={styles.breakdownTrack}>
+                  <View
+                    style={[
+                      styles.breakdownTrack,
+                      {
+                        backgroundColor:
+                          themeMode === 'dark'
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(255,255,255,0.8)',
+                      },
+                    ]}
+                  >
                     <View
                       style={[
                         styles.breakdownFill,
@@ -329,7 +361,9 @@ export default function ActivityScreen() {
                     />
                   </View>
 
-                  <Text style={styles.breakdownPercent}>{percent}% of spending</Text>
+                  <Text style={[styles.breakdownPercent, { color: theme.subtext }]}>
+                    {percent}% of spending
+                  </Text>
                 </View>
               );
             })}
@@ -338,7 +372,9 @@ export default function ActivityScreen() {
       </View>
 
       <View style={styles.sectionRow}>
-        <Text style={styles.sectionNoMargin}>Transaction History</Text>
+        <Text style={[styles.sectionNoMargin, { color: theme.text }]}>
+          Transaction History
+        </Text>
 
         <View style={styles.historyActions}>
           <TouchableOpacity
@@ -361,7 +397,7 @@ export default function ActivityScreen() {
             <Text
               style={[
                 styles.moreButtonText,
-                { color: deleteMode ? '#FFFFFF' : '#111111' },
+                { color: deleteMode ? '#FFFFFF' : theme.text },
               ]}
             >
               ⋯
@@ -372,9 +408,16 @@ export default function ActivityScreen() {
 
       {searchOpen && (
         <TextInput
-          style={[styles.searchInput, { backgroundColor: theme.soft }]}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: theme.soft,
+              color: theme.text,
+              borderColor: theme.border,
+            },
+          ]}
           placeholder="Search transactions..."
-          placeholderTextColor="#888888"
+          placeholderTextColor={theme.subtext}
           value={searchText}
           onChangeText={setSearchText}
           autoCapitalize="none"
@@ -415,7 +458,7 @@ export default function ActivityScreen() {
       </ScrollView>
 
       {visibleTransactions.length === 0 ? (
-        <Text style={styles.empty}>
+        <Text style={[styles.empty, { color: theme.subtext }]}>
           {searchText.trim()
             ? 'No transactions match your search.'
             : 'No transactions found for this filter.'}
@@ -443,31 +486,51 @@ export default function ActivityScreen() {
 
               <View style={[styles.transaction, getTransactionCardStyle(transaction.type)]}>
                 <View style={styles.transactionTopRow}>
-                  <View style={styles.transactionIconBubble}>
+                  <View
+                    style={[
+                      styles.transactionIconBubble,
+                      {
+                        backgroundColor:
+                          themeMode === 'dark'
+                            ? 'rgba(255,255,255,0.10)'
+                            : 'rgba(255,255,255,0.65)',
+                      },
+                    ]}
+                  >
                     <Text style={styles.transactionIcon}>
                       {getTransactionIcon(transaction.type)}
                     </Text>
                   </View>
 
                   <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionLabel}>
+                    <Text style={[styles.transactionLabel, { color: theme.subtext }]}>
                       {getTransactionLabel(transaction.type)}
                     </Text>
 
-                    <Text style={styles.transactionTitle}>
+                    <Text style={[styles.transactionTitle, { color: theme.text }]}>
                       {getTransactionDescription(transaction)}
                     </Text>
 
-                    <Text style={styles.transactionDate}>
+                    <Text style={[styles.transactionDate, { color: theme.subtext }]}>
                       {formatDate(transaction.date)}
                     </Text>
 
                     {transaction.locked && (
-                      <Text style={styles.lockedBadge}>Locked transaction</Text>
+                      <Text
+                        style={[
+                          styles.lockedBadge,
+                          {
+                            backgroundColor: themeMode === 'dark' ? theme.card : '#F2F2F2',
+                            color: theme.subtext,
+                          },
+                        ]}
+                      >
+                        Locked transaction
+                      </Text>
                     )}
                   </View>
 
-                  <Text style={styles.transactionAmount}>
+                  <Text style={[styles.transactionAmount, { color: theme.text }]}>
                     {getAmountText(transaction.type, transaction.amount)}
                   </Text>
                 </View>
@@ -485,13 +548,7 @@ export default function ActivityScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 34, fontWeight: '900', marginTop: 60, marginBottom: 20 },
-
-  summaryCard: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 2,
-  },
-
+  summaryCard: { borderRadius: 22, padding: 20, borderWidth: 2 },
   label: { fontSize: 13, fontWeight: '900' },
   total: { fontSize: 42, fontWeight: '900', marginVertical: 8 },
   sub: { fontSize: 16, fontWeight: '700', marginTop: 6 },
@@ -506,19 +563,18 @@ const styles = StyleSheet.create({
   },
 
   insightsButtonTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '900' },
-  insightsButtonSub: { color: '#F2F2F2', fontSize: 13, fontWeight: '700', marginTop: 4 },
+  insightsButtonSub: {
+    color: '#F2F2F2',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
   insightsArrow: { color: '#FFFFFF', fontSize: 42, fontWeight: '300' },
 
-  moneyFlowCard: {
-    borderRadius: 22,
-    padding: 18,
-    marginTop: 16,
-  },
-
+  moneyFlowCard: { borderRadius: 22, padding: 18, marginTop: 16 },
   cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 14 },
 
   tabs: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 999,
     padding: 4,
     flexDirection: 'row',
@@ -532,7 +588,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  tabText: { fontWeight: '900', color: '#666' },
+  tabText: { fontWeight: '900' },
 
   flowRow: {
     flexDirection: 'row',
@@ -542,11 +598,10 @@ const styles = StyleSheet.create({
 
   flowLabel: { fontSize: 17, fontWeight: '800' },
   moneyIn: { fontSize: 20, fontWeight: '900' },
-  moneyOut: { fontSize: 20, fontWeight: '900', color: '#B00020' },
+  moneyOut: { fontSize: 20, fontWeight: '900', color: '#FF6B6B' },
 
   netRow: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.08)',
     paddingTop: 14,
     marginTop: 4,
     flexDirection: 'row',
@@ -567,7 +622,6 @@ const styles = StyleSheet.create({
   },
 
   sectionNoMargin: { fontSize: 26, fontWeight: '900', flex: 1 },
-
   historyActions: { flexDirection: 'row', gap: 8 },
 
   searchButton: {
@@ -586,7 +640,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 14,
-    color: '#111111',
+    borderWidth: 1,
   },
 
   moreButton: {
@@ -597,30 +651,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  moreButtonText: {
-    fontSize: 30,
-    fontWeight: '900',
-    marginTop: -8,
-  },
+  moreButtonText: { fontSize: 30, fontWeight: '900', marginTop: -8 },
 
   deleteModeHint: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#B00020',
+    color: '#FF6B6B',
     marginBottom: 12,
   },
 
-  empty: { fontSize: 16, fontWeight: '700', color: '#666' },
+  empty: { fontSize: 16, fontWeight: '700' },
 
-  breakdownCard: {
-    borderRadius: 18,
-    padding: 18,
-  },
+  breakdownCard: { borderRadius: 18, padding: 18 },
 
   breakdownEmpty: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#666',
     lineHeight: 22,
   },
 
@@ -632,7 +678,6 @@ const styles = StyleSheet.create({
 
   breakdownTotalLabel: { fontSize: 18, fontWeight: '900' },
   breakdownTotalAmount: { fontSize: 20, fontWeight: '900' },
-
   breakdownItem: { marginBottom: 18 },
 
   breakdownTopRow: {
@@ -648,23 +693,13 @@ const styles = StyleSheet.create({
 
   breakdownTrack: {
     height: 10,
-    backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: 999,
     overflow: 'hidden',
     marginTop: 8,
   },
 
-  breakdownFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
-
-  breakdownPercent: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#666',
-    marginTop: 5,
-  },
+  breakdownFill: { height: '100%', borderRadius: 999 },
+  breakdownPercent: { fontSize: 12, fontWeight: '800', marginTop: 5 },
 
   filterScroll: { marginBottom: 14 },
 
@@ -675,9 +710,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  filterChipText: {
-    fontWeight: '900',
-  },
+  filterChipText: { fontWeight: '900' },
 
   transactionRow: {
     flexDirection: 'row',
@@ -718,12 +751,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  defaultCard: { backgroundColor: '#FFFFFF' },
-  incomeCard: { backgroundColor: '#EAF8EE' },
-  spendCard: { backgroundColor: '#FDECEC' },
-  transferCard: { backgroundColor: '#F2F2F2' },
-  deleteCard: { backgroundColor: '#FFF4E5' },
-
   transactionTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -733,7 +760,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -745,7 +771,6 @@ const styles = StyleSheet.create({
   transactionLabel: {
     fontSize: 12,
     fontWeight: '900',
-    color: '#666',
     marginBottom: 3,
   },
 
@@ -757,14 +782,11 @@ const styles = StyleSheet.create({
   transactionDate: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#777',
     marginTop: 4,
   },
 
   lockedBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F2F2F2',
-    color: '#666666',
     fontSize: 11,
     fontWeight: '900',
     paddingHorizontal: 8,
@@ -778,6 +800,5 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'right',
     maxWidth: 95,
-    color: '#111111',
   },
 });

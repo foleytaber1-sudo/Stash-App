@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/constants/currency';
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import {
@@ -13,13 +15,6 @@ const screenWidth = Dimensions.get('window').width;
 const chartWidth = Math.min(screenWidth - 116, 300);
 const chartHeight = 150;
 const dotSize = 10;
-
-const formatMoney = (amount: number) => {
-  return amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
 
 const formatShortDate = (date: Date) => {
   return date.toLocaleDateString(undefined, {
@@ -42,6 +37,11 @@ export default function InsightsScreen() {
   const accounts = useStashStore((state) => state.accounts);
   const envelopes = useStashStore((state) => state.envelopes);
   const transactions = useStashStore((state) => state.transactions);
+  const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
+
+  const theme = getTheme(themeColor, themeMode);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
@@ -207,7 +207,7 @@ export default function InsightsScreen() {
       label: 'Income Strength',
       value: incomeStrengthPoints,
       max: 20,
-      detail: `$${formatMoney(currentIncome)} income in the last 30 days`,
+      detail: `${formatCurrency(currentIncome, currency)} income in the last 30 days`,
     },
     {
       label: 'Spending Control',
@@ -240,7 +240,7 @@ export default function InsightsScreen() {
       label: 'Cash Cushion',
       value: cashCushionPoints,
       max: 15,
-      detail: `$${formatMoney(availableToStuff)} available to stuff`,
+      detail: `${formatCurrency(availableToStuff, currency)} available to stuff`,
     },
     {
       label: 'Trend Impact',
@@ -257,7 +257,8 @@ export default function InsightsScreen() {
       return {
         label: 'Needs Attention',
         color: '#FFB3B3',
-        message: 'Your score is being held back by low income, spending pressure, or missing budget activity.',
+        message:
+          'Your score is being held back by low income, spending pressure, or missing budget activity.',
       };
     }
 
@@ -265,7 +266,8 @@ export default function InsightsScreen() {
       return {
         label: 'Getting There',
         color: '#FFD6A5',
-        message: 'You are building momentum. Keep adding income, stuffing envelopes, and controlling spending.',
+        message:
+          'You are building momentum. Keep adding income, stuffing envelopes, and controlling spending.',
       };
     }
 
@@ -318,9 +320,9 @@ export default function InsightsScreen() {
         ? `${topCategory.icon} ${topCategory.name} spending dropped ${Math.abs(Math.round(topCategoryChange))}%.`
         : '',
     netCash > 0
-      ? `You kept $${formatMoney(netCash)} more than you spent.`
+      ? `You kept ${formatCurrency(netCash, currency)} more than you spent.`
       : currentIncome > 0
-        ? `You spent $${formatMoney(Math.abs(netCash))} more than you earned.`
+        ? `You spent ${formatCurrency(Math.abs(netCash), currency)} more than you earned.`
         : '',
   ].filter(Boolean);
 
@@ -333,7 +335,7 @@ export default function InsightsScreen() {
       ? `${largestEnvelope.icon ?? '💵'} ${largestEnvelope.name} is your largest envelope right now.`
       : 'Create envelopes to start seeing better insights.',
     currentStuffed > 0
-      ? `You assigned $${formatMoney(currentStuffed)} into envelopes in the last 30 days.`
+      ? `You assigned ${formatCurrency(currentStuffed, currency)} into envelopes in the last 30 days.`
       : 'Stuff money into envelopes to improve your score.',
   ];
 
@@ -396,6 +398,7 @@ export default function InsightsScreen() {
               width: distance,
               left: point.x,
               top: point.y,
+              backgroundColor: theme.accent,
               transform: [{ rotateZ: `${angle}rad` }],
             },
           ]}
@@ -416,6 +419,8 @@ export default function InsightsScreen() {
             {
               left: point.x - dotSize / 2,
               top: point.y - dotSize / 2,
+              backgroundColor: theme.button,
+              borderColor: theme.accent,
             },
           ]}
         />
@@ -424,16 +429,22 @@ export default function InsightsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>‹</Text>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: theme.card }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backButtonText, { color: theme.text }]}>‹</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Insights</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Insights</Text>
       </View>
 
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { color: theme.subtext }]}>
         What your money is telling you this month.
       </Text>
 
@@ -444,25 +455,30 @@ export default function InsightsScreen() {
         <Text style={styles.healthMessage}>{healthInfo.message}</Text>
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>Score Breakdown</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Score Breakdown</Text>
 
         {activeBreakdown.length === 0 ? (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.subtext }]}>
             Add income, stuff envelopes, set goals, or track spending to build your Stash Score.
           </Text>
         ) : (
           activeBreakdown.map((item) => (
-            <View style={styles.scoreRow} key={item.label}>
+            <View
+              style={[styles.scoreRow, { borderBottomColor: theme.border }]}
+              key={item.label}
+            >
               <View style={styles.scoreInfo}>
-                <Text style={styles.scoreLabel}>{item.label}</Text>
-                <Text style={styles.scoreDetail}>{item.detail}</Text>
+                <Text style={[styles.scoreLabel, { color: theme.text }]}>{item.label}</Text>
+                <Text style={[styles.scoreDetail, { color: theme.subtext }]}>
+                  {item.detail}
+                </Text>
               </View>
 
               <Text
                 style={[
                   styles.scoreValue,
-                  item.value < 0 && styles.negativeScoreValue,
+                  { color: item.value < 0 ? '#FF6B6B' : theme.accent },
                 ]}
               >
                 {item.value > 0 ? '+' : ''}
@@ -473,65 +489,72 @@ export default function InsightsScreen() {
         )}
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>Budget Insights</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Budget Insights</Text>
 
         {budgetInsights.length === 0 ? (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.subtext }]}>
             Keep using Stash and this section will compare your money habits over time.
           </Text>
         ) : (
           budgetInsights.map((insight) => (
             <View style={styles.insightRow} key={insight}>
-              <Text style={styles.insightBullet}>•</Text>
-              <Text style={styles.insightText}>{insight}</Text>
+              <Text style={[styles.insightBullet, { color: theme.accent }]}>•</Text>
+              <Text style={[styles.insightText, { color: theme.subtext }]}>{insight}</Text>
             </View>
           ))
         )}
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>Smart Insights</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Smart Insights</Text>
 
         {smartInsights.map((insight) => (
           <View style={styles.insightRow} key={insight}>
-            <Text style={styles.insightBullet}>•</Text>
-            <Text style={styles.insightText}>{insight}</Text>
+            <Text style={[styles.insightBullet, { color: theme.accent }]}>•</Text>
+            <Text style={[styles.insightText, { color: theme.subtext }]}>{insight}</Text>
           </View>
         ))}
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>30-Day Snapshot</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>30-Day Snapshot</Text>
 
-        <View style={styles.snapshotRow}>
-          <Text style={styles.snapshotLabel}>Income</Text>
-          <Text style={styles.positiveAmount}>+${formatMoney(currentIncome)}</Text>
+        <View style={[styles.snapshotRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>Income</Text>
+          <Text style={[styles.positiveAmount, { color: theme.accent }]}>
+            +{formatCurrency(currentIncome, currency)}
+          </Text>
         </View>
 
-        <View style={styles.snapshotRow}>
-          <Text style={styles.snapshotLabel}>Spent</Text>
-          <Text style={styles.negativeAmount}>-${formatMoney(currentSpent)}</Text>
+        <View style={[styles.snapshotRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>Spent</Text>
+          <Text style={styles.negativeAmount}>
+            -{formatCurrency(currentSpent, currency)}
+          </Text>
         </View>
 
-        <View style={styles.snapshotRow}>
-          <Text style={styles.snapshotLabel}>Stuffed</Text>
-          <Text style={styles.snapshotValue}>${formatMoney(currentStuffed)}</Text>
+        <View style={[styles.snapshotRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>Stuffed</Text>
+          <Text style={[styles.snapshotValue, { color: theme.text }]}>
+            {formatCurrency(currentStuffed, currency)}
+          </Text>
         </View>
 
         <View style={styles.netRow}>
-          <Text style={styles.netLabel}>Net Cash</Text>
-          <Text style={styles.netValue}>
-            {netCash >= 0 ? '+' : '-'}${formatMoney(Math.abs(netCash))}
+          <Text style={[styles.netLabel, { color: theme.text }]}>Net Cash</Text>
+          <Text style={[styles.netValue, { color: netCash >= 0 ? theme.accent : '#FF6B6B' }]}>
+            {netCash >= 0 ? '+' : '-'}
+            {formatCurrency(Math.abs(netCash), currency)}
           </Text>
         </View>
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>Spending Categories</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Spending Categories</Text>
 
         {currentSpendingBreakdown.length === 0 ? (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.subtext }]}>
             No spending in the last 30 days yet. Once you spend from envelopes, your categories will appear here.
           </Text>
         ) : (
@@ -542,63 +565,96 @@ export default function InsightsScreen() {
             return (
               <View style={styles.spendingItem} key={item.id}>
                 <View style={styles.graphTopRow}>
-                  <Text style={styles.graphLabel}>
+                  <Text style={[styles.graphLabel, { color: theme.text }]}>
                     {item.icon} {item.name}
                   </Text>
 
-                  <Text style={styles.graphAmount}>${formatMoney(item.spent)}</Text>
+                  <Text style={[styles.graphAmount, { color: theme.text }]}>
+                    {formatCurrency(item.spent, currency)}
+                  </Text>
                 </View>
 
-                <View style={styles.graphTrack}>
-                  <View style={[styles.darkGraphFill, { width: `${percent}%` }]} />
+                <View style={[styles.graphTrack, { backgroundColor: theme.soft }]}>
+                  <View
+                    style={[
+                      styles.darkGraphFill,
+                      { width: `${percent}%`, backgroundColor: theme.accent },
+                    ]}
+                  />
                 </View>
 
-                <Text style={styles.shareText}>{share}% of 30-day spending</Text>
+                <Text style={[styles.shareText, { color: theme.subtext }]}>
+                  {share}% of 30-day spending
+                </Text>
               </View>
             );
           })
         )}
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>30-Day Spending Trend</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>30-Day Spending Trend</Text>
 
         <View style={styles.lineChartWrapper}>
           <View style={styles.lineChart}>
-            <View style={styles.chartGridLine} />
-            <View style={[styles.chartGridLine, { top: chartHeight / 2 }]} />
-            <View style={[styles.chartGridLine, { top: chartHeight - 1 }]} />
+            <View style={[styles.chartGridLine, { backgroundColor: theme.border }]} />
+            <View
+              style={[
+                styles.chartGridLine,
+                { top: chartHeight / 2, backgroundColor: theme.border },
+              ]}
+            />
+            <View
+              style={[
+                styles.chartGridLine,
+                { top: chartHeight - 1, backgroundColor: theme.border },
+              ]}
+            />
 
             {renderLineSegments()}
             {renderDots()}
           </View>
 
           <View style={styles.dateRow}>
-            <Text style={styles.dateLabel}>{lastThirtyDays[0]?.label}</Text>
-            <Text style={styles.dateLabel}>{lastThirtyDays[14]?.label}</Text>
-            <Text style={styles.dateLabel}>{lastThirtyDays[29]?.label}</Text>
+            <Text style={[styles.dateLabel, { color: theme.subtext }]}>
+              {lastThirtyDays[0]?.label}
+            </Text>
+            <Text style={[styles.dateLabel, { color: theme.subtext }]}>
+              {lastThirtyDays[14]?.label}
+            </Text>
+            <Text style={[styles.dateLabel, { color: theme.subtext }]}>
+              {lastThirtyDays[29]?.label}
+            </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.bigCard}>
-        <Text style={styles.cardTitle}>Predictions</Text>
+      <View style={[styles.bigCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Predictions</Text>
 
-        <View style={styles.predictionBox}>
-          <Text style={styles.predictionLabel}>Average Daily Spend</Text>
-          <Text style={styles.predictionValue}>${formatMoney(averageDailySpend)}</Text>
-        </View>
-
-        <View style={styles.predictionBox}>
-          <Text style={styles.predictionLabel}>Projected 30-Day Spend</Text>
-          <Text style={styles.predictionValue}>
-            ${formatMoney(projectedMonthlySpend)}
+        <View style={[styles.predictionBox, { backgroundColor: theme.soft }]}>
+          <Text style={[styles.predictionLabel, { color: theme.subtext }]}>
+            Average Daily Spend
+          </Text>
+          <Text style={[styles.predictionValue, { color: theme.text }]}>
+            {formatCurrency(averageDailySpend, currency)}
           </Text>
         </View>
 
-        <View style={styles.predictionBox}>
-          <Text style={styles.predictionLabel}>Available Cash Could Last</Text>
-          <Text style={styles.predictionValue}>
+        <View style={[styles.predictionBox, { backgroundColor: theme.soft }]}>
+          <Text style={[styles.predictionLabel, { color: theme.subtext }]}>
+            Projected 30-Day Spend
+          </Text>
+          <Text style={[styles.predictionValue, { color: theme.text }]}>
+            {formatCurrency(projectedMonthlySpend, currency)}
+          </Text>
+        </View>
+
+        <View style={[styles.predictionBox, { backgroundColor: theme.soft }]}>
+          <Text style={[styles.predictionLabel, { color: theme.subtext }]}>
+            Available Cash Could Last
+          </Text>
+          <Text style={[styles.predictionValue, { color: theme.text }]}>
             {availableDaysLeft > 0 ? `${availableDaysLeft} days` : 'Not enough data'}
           </Text>
         </View>
@@ -610,73 +666,38 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FFF4',
-    padding: 20,
-  },
-
-  headerRow: {
-    marginTop: 55,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
+  container: { flex: 1, padding: 20 },
+  headerRow: { marginTop: 55, flexDirection: 'row', alignItems: 'center' },
   backButton: {
     width: 42,
     height: 42,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-
-  backButtonText: {
-    fontSize: 38,
-    fontWeight: '700',
-    marginTop: -4,
-  },
-
-  title: {
-    fontSize: 34,
-    fontWeight: '900',
-  },
-
+  backButtonText: { fontSize: 38, fontWeight: '700', marginTop: -4 },
+  title: { fontSize: 34, fontWeight: '900' },
   subtitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#666666',
     marginTop: 8,
     marginBottom: 20,
   },
-
-  healthCard: {
-    borderRadius: 28,
-    padding: 24,
-    marginBottom: 18,
-  },
-
+  healthCard: { borderRadius: 28, padding: 24, marginBottom: 18 },
   healthLabel: {
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.7,
     color: '#111111',
   },
-
   healthScore: {
     fontSize: 76,
     fontWeight: '900',
     color: '#111111',
     marginTop: 8,
   },
-
-  healthStatus: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
+  healthStatus: { fontSize: 28, fontWeight: '900', color: '#111111' },
   healthMessage: {
     fontSize: 16,
     fontWeight: '700',
@@ -684,187 +705,77 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     marginTop: 8,
   },
-
   bigCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginTop: 18,
     overflow: 'hidden',
   },
-
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    marginBottom: 16,
-    color: '#111111',
-  },
-
+  cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 16 },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
     paddingVertical: 12,
   },
-
-  scoreInfo: {
-    flex: 1,
-    paddingRight: 12,
-  },
-
-  scoreLabel: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
+  scoreInfo: { flex: 1, paddingRight: 12 },
+  scoreLabel: { fontSize: 16, fontWeight: '900' },
   scoreDetail: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#666666',
     marginTop: 4,
     lineHeight: 19,
   },
-
-  scoreValue: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
-  negativeScoreValue: {
-    color: '#B00020',
-  },
-
-  insightRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-
+  scoreValue: { fontSize: 19, fontWeight: '900' },
+  insightRow: { flexDirection: 'row', marginBottom: 12 },
   insightBullet: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#111111',
     marginRight: 10,
     marginTop: -4,
   },
-
-  insightText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#444444',
-    lineHeight: 23,
-  },
-
+  insightText: { flex: 1, fontSize: 16, fontWeight: '700', lineHeight: 23 },
   snapshotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
     paddingVertical: 12,
   },
-
-  snapshotLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#666666',
-  },
-
-  snapshotValue: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
-  positiveAmount: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
-  negativeAmount: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
+  snapshotLabel: { fontSize: 16, fontWeight: '800' },
+  snapshotValue: { fontSize: 17, fontWeight: '900' },
+  positiveAmount: { fontSize: 17, fontWeight: '900' },
+  negativeAmount: { fontSize: 17, fontWeight: '900', color: '#FF6B6B' },
   netRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 14,
     marginTop: 2,
   },
-
-  netLabel: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
-  netValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
-  spendingItem: {
-    marginBottom: 20,
-  },
-
+  netLabel: { fontSize: 19, fontWeight: '900' },
+  netValue: { fontSize: 22, fontWeight: '900' },
+  spendingItem: { marginBottom: 20 },
   graphTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
-  graphLabel: {
-    fontSize: 15,
-    fontWeight: '900',
-    flex: 1,
-    color: '#111111',
-  },
-
-  graphAmount: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#111111',
-  },
-
+  graphLabel: { fontSize: 15, fontWeight: '900', flex: 1 },
+  graphAmount: { fontSize: 15, fontWeight: '900' },
   graphTrack: {
     height: 13,
-    backgroundColor: '#F0F0F0',
     borderRadius: 999,
     overflow: 'hidden',
     marginTop: 9,
   },
-
-  darkGraphFill: {
-    height: '100%',
-    backgroundColor: '#111111',
-    borderRadius: 999,
-  },
-
-  shareText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#666666',
-    marginTop: 6,
-  },
-
+  darkGraphFill: { height: '100%', borderRadius: 999 },
+  shareText: { fontSize: 12, fontWeight: '800', marginTop: 6 },
   emptyText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#666666',
     lineHeight: 22,
     marginBottom: 8,
   },
-
-  lineChartWrapper: {
-    alignItems: 'center',
-  },
-
+  lineChartWrapper: { alignItems: 'center' },
   lineChart: {
     width: chartWidth,
     height: chartHeight,
@@ -872,65 +783,34 @@ const styles = StyleSheet.create({
     marginTop: 10,
     overflow: 'hidden',
   },
-
   chartGridLine: {
     position: 'absolute',
     left: 0,
     top: 0,
     width: chartWidth,
     height: 1,
-    backgroundColor: '#EEEEEE',
   },
-
   lineSegment: {
     position: 'absolute',
     height: 3,
     borderRadius: 999,
-    backgroundColor: '#111111',
     transformOrigin: 'left center',
   },
-
   chartDot: {
     position: 'absolute',
     width: dotSize,
     height: dotSize,
     borderRadius: 999,
-    backgroundColor: '#C8FF9B',
     borderWidth: 2,
-    borderColor: '#111111',
   },
-
   dateRow: {
     width: chartWidth,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
   },
-
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#777777',
-    textAlign: 'center',
-  },
-
-  predictionBox: {
-    backgroundColor: '#F8FFF4',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 10,
-  },
-
-  predictionLabel: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#666666',
-    marginBottom: 5,
-  },
-
-  predictionValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#111111',
-  },
-})
+  dateLabel: { fontSize: 10, fontWeight: '800', textAlign: 'center' },
+  predictionBox: { borderRadius: 18, padding: 16, marginBottom: 10 },
+  predictionLabel: { fontSize: 13, fontWeight: '900', marginBottom: 5 },
+  predictionValue: { fontSize: 24, fontWeight: '900' },
+});

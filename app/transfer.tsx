@@ -1,13 +1,15 @@
+import { formatCurrency } from '@/constants/currency';
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function TransferScreen() {
@@ -15,6 +17,11 @@ export default function TransferScreen() {
   const transferBetweenAccounts = useStashStore(
     (state) => state.transferBetweenAccounts
   );
+  const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
+
+  const theme = getTheme(themeColor, themeMode);
 
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -28,74 +35,98 @@ export default function TransferScreen() {
     if (fromAccount === toAccount) return;
 
     transferBetweenAccounts(fromAccount, toAccount, transferAmount, note);
-
     router.back();
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Transfer Money</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.text }]}>Transfer Money</Text>
 
-      <Text style={styles.label}>Amount</Text>
+      <Text style={[styles.label, { color: theme.text }]}>Amount</Text>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            backgroundColor: theme.card,
+            color: theme.text,
+            borderColor: theme.border,
+          },
+        ]}
         placeholder="0.00"
+        placeholderTextColor={theme.subtext}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
       />
 
-      <Text style={styles.label}>From Account</Text>
+      <Text style={[styles.label, { color: theme.text }]}>From Account</Text>
 
       {accounts.map((account) => (
         <TouchableOpacity
           key={account.id}
           style={[
             styles.accountButton,
-            fromAccount === account.id && styles.selectedAccount,
+            { backgroundColor: theme.card },
+            fromAccount === account.id && { backgroundColor: theme.button },
           ]}
           onPress={() => setFromAccount(account.id)}
         >
           <View>
-            <Text style={styles.accountText}>{account.name}</Text>
-            <Text style={styles.accountBalance}>
-              ${account.balance.toFixed(2)}
+            <Text style={[styles.accountText, { color: theme.text }]}>
+              {account.name}
+            </Text>
+            <Text style={[styles.accountBalance, { color: theme.subtext }]}>
+              {formatCurrency(account.balance, currency)}
             </Text>
           </View>
         </TouchableOpacity>
       ))}
 
-      <Text style={styles.label}>To Account</Text>
+      <Text style={[styles.label, { color: theme.text }]}>To Account</Text>
 
       {accounts.map((account) => (
         <TouchableOpacity
           key={account.id}
           style={[
             styles.accountButton,
-            toAccount === account.id && styles.selectedAccount,
+            { backgroundColor: theme.card },
+            toAccount === account.id && { backgroundColor: theme.button },
           ]}
           onPress={() => setToAccount(account.id)}
         >
           <View>
-            <Text style={styles.accountText}>{account.name}</Text>
-            <Text style={styles.accountBalance}>
-              ${account.balance.toFixed(2)}
+            <Text style={[styles.accountText, { color: theme.text }]}>
+              {account.name}
+            </Text>
+            <Text style={[styles.accountBalance, { color: theme.subtext }]}>
+              {formatCurrency(account.balance, currency)}
             </Text>
           </View>
         </TouchableOpacity>
       ))}
 
-      <Text style={styles.label}>Note</Text>
+      <Text style={[styles.label, { color: theme.text }]}>Note</Text>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            backgroundColor: theme.card,
+            color: theme.text,
+            borderColor: theme.border,
+          },
+        ]}
         placeholder="Example: Move to savings"
+        placeholderTextColor={theme.subtext}
         value={note}
         onChangeText={setNote}
       />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+      <TouchableOpacity
+        style={[styles.saveButton, { backgroundColor: theme.accent }]}
+        onPress={handleSave}
+      >
         <Text style={styles.saveText}>Transfer</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -105,7 +136,6 @@ export default function TransferScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FFF4',
     padding: 20,
   },
 
@@ -124,22 +154,17 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 18,
     fontSize: 18,
     marginBottom: 25,
+    borderWidth: 1,
   },
 
   accountButton: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,
-  },
-
-  selectedAccount: {
-    backgroundColor: '#C8FF9B',
   },
 
   accountText: {
@@ -151,11 +176,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
     fontWeight: '700',
-    color: '#666',
   },
 
   saveButton: {
-    backgroundColor: '#111111',
     padding: 18,
     borderRadius: 18,
     alignItems: 'center',

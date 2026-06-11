@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/constants/currency';
+import { getTheme } from '@/constants/theme';
 import { useStashStore } from '@/store/store';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -11,13 +13,6 @@ import {
   View,
 } from 'react-native';
 
-const formatMoney = (amount: number) => {
-  return amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
 export default function AccountDetailScreen() {
   const { id } = useLocalSearchParams();
 
@@ -25,6 +20,11 @@ export default function AccountDetailScreen() {
   const transactions = useStashStore((state) => state.transactions);
   const deleteAccount = useStashStore((state) => state.deleteAccount);
   const editAccountName = useStashStore((state) => state.editAccountName);
+  const themeColor = useStashStore((state) => state.themeColor);
+  const themeMode = useStashStore((state) => state.themeMode);
+  const currency = useStashStore((state) => state.currency);
+
+  const theme = getTheme(themeColor, themeMode);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
@@ -42,15 +42,18 @@ export default function AccountDetailScreen() {
 
   if (!account) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Account not found</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Account not found</Text>
       </View>
     );
   }
 
   const getTransactionAmountPrefix = (transaction: (typeof transactions)[number]) => {
     if (transaction.type === 'spend') return '-';
-    if (transaction.type === 'transfer' && transaction.fromAccountId === accountId) return '-';
+    if (transaction.type === 'transfer' && transaction.fromAccountId === accountId) {
+      return '-';
+    }
+
     return '+';
   };
 
@@ -103,73 +106,91 @@ export default function AccountDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       {isEditingName ? (
-        <View style={styles.nameEditCard}>
-          <Text style={styles.cardTitle}>Edit Account Name</Text>
+        <View style={[styles.nameEditCard, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Edit Account Name</Text>
 
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.soft,
+                color: theme.text,
+                borderColor: theme.border,
+              },
+            ]}
             placeholder="Account name"
+            placeholderTextColor={theme.subtext}
             value={newAccountName}
             onChangeText={setNewAccountName}
           />
 
-          <TouchableOpacity style={styles.greenButton} onPress={handleSaveAccountName}>
-            <Text style={styles.buttonText}>Save Name</Text>
+          <TouchableOpacity
+            style={[styles.greenButton, { backgroundColor: theme.button }]}
+            onPress={handleSaveAccountName}
+          >
+            <Text style={[styles.buttonText, { color: theme.text }]}>Save Name</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.cancelButton}
+            style={[styles.cancelButton, { backgroundColor: theme.soft }]}
             onPress={() => {
               setIsEditingName(false);
               setNewAccountName('');
             }}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.text }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
-          <Text style={styles.title}>🏦 {account.name}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>🏦 {account.name}</Text>
 
           <TouchableOpacity
-            style={styles.editNameButton}
+            style={[styles.editNameButton, { backgroundColor: theme.card }]}
             onPress={() => {
               setNewAccountName(account.name);
               setIsEditingName(true);
             }}
           >
-            <Text style={styles.editNameText}>Edit Name</Text>
+            <Text style={[styles.editNameText, { color: theme.text }]}>Edit Name</Text>
           </TouchableOpacity>
         </>
       )}
 
-      <View style={styles.balanceCard}>
-        <Text style={styles.label}>ACCOUNT BALANCE</Text>
-        <Text style={styles.balance}>${formatMoney(account.balance)}</Text>
+      <View style={[styles.balanceCard, { backgroundColor: theme.button }]}>
+        <Text style={[styles.label, { color: themeMode === 'dark' ? theme.text : '#111111' }]}>
+          ACCOUNT BALANCE
+        </Text>
+        <Text style={[styles.balance, { color: themeMode === 'dark' ? theme.text : '#111111' }]}>
+          {formatCurrency(account.balance, currency)}
+        </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>History</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>History</Text>
 
       {accountTransactions.length === 0 ? (
-        <Text style={styles.empty}>No account history yet.</Text>
+        <Text style={[styles.empty, { color: theme.subtext }]}>No account history yet.</Text>
       ) : (
         accountTransactions.map((transaction) => (
-          <View key={transaction.id} style={styles.transaction}>
-            <Text style={styles.transactionText}>
+          <View
+            key={transaction.id}
+            style={[styles.transaction, { backgroundColor: theme.card }]}
+          >
+            <Text style={[styles.transactionText, { color: theme.text }]}>
               {getTransactionDescription(transaction)}
             </Text>
-            <Text style={styles.transactionAmount}>
+            <Text style={[styles.transactionAmount, { color: theme.text }]}>
               {getTransactionAmountPrefix(transaction)}
-              ${formatMoney(transaction.amount)}
+              {formatCurrency(transaction.amount, currency)}
             </Text>
           </View>
         ))
       )}
 
-      <View style={styles.settingsCard}>
-        <Text style={styles.cardTitle}>Account Settings</Text>
+      <View style={[styles.settingsCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Account Settings</Text>
 
         <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
           <Text style={styles.deleteText}>Delete Account</Text>
@@ -180,10 +201,9 @@ export default function AccountDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FFF4', padding: 20 },
+  container: { flex: 1, padding: 20 },
   title: { fontSize: 34, fontWeight: '900', marginTop: 60, marginBottom: 8 },
   editNameButton: {
-    backgroundColor: '#FFFFFF',
     padding: 12,
     borderRadius: 14,
     alignItems: 'center',
@@ -191,27 +211,24 @@ const styles = StyleSheet.create({
   },
   editNameText: { fontWeight: '900', fontSize: 16 },
   nameEditCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     marginTop: 60,
     marginBottom: 16,
   },
   input: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 14,
     padding: 14,
     fontSize: 18,
     marginBottom: 12,
+    borderWidth: 1,
   },
   greenButton: {
-    backgroundColor: '#C8FF9B',
     padding: 14,
     borderRadius: 14,
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
     padding: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -220,7 +237,6 @@ const styles = StyleSheet.create({
   cancelText: { fontWeight: '900', fontSize: 16 },
   buttonText: { fontWeight: '900', fontSize: 16 },
   balanceCard: {
-    backgroundColor: '#C8FF9B',
     borderRadius: 22,
     padding: 20,
     marginBottom: 16,
@@ -228,9 +244,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   balance: { fontSize: 42, fontWeight: '900', marginTop: 6 },
   sectionTitle: { fontSize: 26, fontWeight: '900', marginTop: 10, marginBottom: 12 },
-  empty: { fontSize: 16, fontWeight: '700', color: '#666' },
+  empty: { fontSize: 16, fontWeight: '700' },
   transaction: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,
@@ -238,7 +253,6 @@ const styles = StyleSheet.create({
   transactionText: { fontWeight: '800' },
   transactionAmount: { fontSize: 22, fontWeight: '900', marginTop: 6 },
   settingsCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     marginTop: 14,
@@ -251,5 +265,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  deleteText: { fontWeight: '900', fontSize: 16 },
+  deleteText: { fontWeight: '900', fontSize: 16, color: '#7A0000' },
 });
