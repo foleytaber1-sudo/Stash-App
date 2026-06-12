@@ -14,6 +14,13 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen
+            name="onboarding"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
             name="(tabs)"
             options={{
               headerShown: false,
@@ -38,6 +45,14 @@ export default function RootLayout() {
             name="payday-reminder"
             options={{
               headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="stash-brain"
+            options={{
+              title: 'Stash Brain',
+              headerBackTitle: 'Activity',
             }}
           />
 

@@ -171,12 +171,28 @@ export default function ActivityScreen() {
   };
 
   const getTransactionCardStyle = (type: string) => {
-    if (type === 'income') return { backgroundColor: themeMode === 'dark' ? '#193321' : '#EAF8EE' };
-    if (type === 'spend') return { backgroundColor: themeMode === 'dark' ? '#3A1D1D' : '#FDECEC' };
+    if (type === 'income') {
+      return { backgroundColor: themeMode === 'dark' ? '#193321' : '#EAF8EE' };
+    }
+
+    if (type === 'spend') {
+      return { backgroundColor: themeMode === 'dark' ? '#3A1D1D' : '#FDECEC' };
+    }
+
     if (type === 'stuff') return { backgroundColor: theme.soft };
-    if (type === 'transfer') return { backgroundColor: themeMode === 'dark' ? theme.card : '#F2F2F2' };
-    if (type === 'delete-envelope') return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
-    if (type === 'delete-account') return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
+
+    if (type === 'transfer') {
+      return { backgroundColor: themeMode === 'dark' ? theme.card : '#F2F2F2' };
+    }
+
+    if (type === 'delete-envelope') {
+      return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
+    }
+
+    if (type === 'delete-account') {
+      return { backgroundColor: themeMode === 'dark' ? '#3A2B18' : '#FFF4E5' };
+    }
+
     return { backgroundColor: theme.card };
   };
 
@@ -249,6 +265,25 @@ export default function ActivityScreen() {
         <Text style={styles.insightsArrow}>›</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[
+          styles.brainButton,
+          { backgroundColor: theme.soft, borderColor: theme.accent },
+        ]}
+        onPress={() => router.push('/stash-brain' as any)}
+      >
+        <View style={styles.brainButtonTextWrap}>
+          <Text style={[styles.brainButtonTitle, { color: theme.text }]}>
+            🧠 Stash Brain™
+          </Text>
+          <Text style={[styles.brainButtonSub, { color: theme.subtext }]}>
+            Smart budgeting insights powered by your app data
+          </Text>
+        </View>
+
+        <Text style={[styles.brainArrow, { color: theme.accent }]}>›</Text>
+      </TouchableOpacity>
+
       <View style={[styles.moneyFlowCard, { backgroundColor: theme.soft }]}>
         <Text style={[styles.cardTitle, { color: theme.text }]}>Money Flow</Text>
 
@@ -257,7 +292,9 @@ export default function ActivityScreen() {
             styles.tabs,
             {
               backgroundColor:
-                themeMode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)',
+                themeMode === 'dark'
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(255,255,255,0.7)',
             },
           ]}
         >
@@ -570,6 +607,26 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   insightsArrow: { color: '#FFFFFF', fontSize: 42, fontWeight: '300' },
+
+  brainButton: {
+    borderRadius: 22,
+    padding: 18,
+    marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+
+  brainButtonTextWrap: { flex: 1, paddingRight: 10 },
+  brainButtonTitle: { fontSize: 22, fontWeight: '900' },
+  brainButtonSub: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  brainArrow: { fontSize: 42, fontWeight: '300' },
 
   moneyFlowCard: { borderRadius: 22, padding: 18, marginTop: 16 },
   cardTitle: { fontSize: 22, fontWeight: '900', marginBottom: 14 },

@@ -75,6 +75,13 @@ export default function EnvelopeScreen() {
   if (!envelope) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: theme.card }]}
+          onPress={() => router.replace('/(tabs)')}
+        >
+          <Text style={[styles.backText, { color: theme.text }]}>← Home</Text>
+        </TouchableOpacity>
+
         <Text style={[styles.title, { color: theme.text }]}>Envelope not found</Text>
       </View>
     );
@@ -155,7 +162,7 @@ export default function EnvelopeScreen() {
           style: 'destructive',
           onPress: () => {
             deleteEnvelope(envelope.id);
-            router.back();
+            router.replace('/(tabs)');
           },
         },
       ]
@@ -164,6 +171,13 @@ export default function EnvelopeScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <TouchableOpacity
+        style={[styles.backButton, { backgroundColor: theme.card }]}
+        onPress={() => router.replace('/(tabs)')}
+      >
+        <Text style={[styles.backText, { color: theme.text }]}>← Home</Text>
+      </TouchableOpacity>
+
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: theme.text }]}>
           {icon} {envelope.name}
@@ -478,11 +492,25 @@ export default function EnvelopeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
 
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
+  backText: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 8,
     marginBottom: 8,
   },
 

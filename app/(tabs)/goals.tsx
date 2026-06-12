@@ -18,6 +18,13 @@ import Svg, { Circle } from 'react-native-svg';
 const screenWidth = Dimensions.get('window').width;
 const cardWidth = (screenWidth - 54) / 2;
 
+type SortMode =
+  | 'progressHigh'
+  | 'progressLow'
+  | 'remainingHigh'
+  | 'remainingLow'
+  | 'name';
+
 const GoalRing = ({
   percent,
   color,
@@ -35,20 +42,13 @@ const GoalRing = ({
   strokeWidth?: number;
   textSize?: number;
 }) => {
+  const safePercent = Math.max(0, Math.min(percent, 100));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = circumference - (percent / 100) * circumference;
+  const progress = circumference - (safePercent / 100) * circumference;
 
   return (
-    <View
-      style={[
-        styles.ringWrapper,
-        {
-          width: size,
-          height: size,
-        },
-      ]}
-    >
+    <View style={[styles.ringWrapper, { width: size, height: size }]}>
       <Svg width={size} height={size}>
         <Circle
           cx={size / 2}
@@ -74,7 +74,7 @@ const GoalRing = ({
       </Svg>
 
       <Text style={[styles.ringText, { color: textColor, fontSize: textSize }]}>
-        {percent}%
+        {safePercent}%
       </Text>
     </View>
   );
@@ -91,10 +91,9 @@ export default function GoalsScreen() {
 
   const [editingGoalId, setEditingGoalId] = useState('');
   const [goalAmountInput, setGoalAmountInput] = useState('');
+  const [sortMode, setSortMode] = useState<SortMode>('progressHigh');
 
-  const totalSaved = envelopes.reduce((sum, item) => {
-    return sum + item.balance;
-  }, 0);
+  const totalSaved = envelopes.reduce((sum, item) => sum + item.balance, 0);
 
   const totalGoals = envelopes.reduce((sum, item) => {
     return sum + (item.goalAmount ?? 0);
@@ -105,12 +104,55 @@ export default function GoalsScreen() {
       ? Math.round(Math.min(totalSaved / totalGoals, 1) * 100)
       : 0;
 
-  const sortedEnvelopes = [...envelopes].sort((a, b) => {
-    const aProgress = a.goalAmount > 0 ? a.balance / a.goalAmount : 0;
-    const bProgress = b.goalAmount > 0 ? b.balance / b.goalAmount : 0;
+  const getGoalProgress = (envelope: any) => {
+    const goalAmount = envelope.goalAmount ?? 0;
+    if (goalAmount <= 0) return 0;
+    return Math.min(envelope.balance / goalAmount, 1);
+  };
 
-    return bProgress - aProgress;
+  const getRemaining = (envelope: any) => {
+    const goalAmount = envelope.goalAmount ?? 0;
+    return Math.max(goalAmount - envelope.balance, 0);
+  };
+
+  const sortedEnvelopes = [...envelopes].sort((a, b) => {
+    if (sortMode === 'progressHigh') {
+      return getGoalProgress(b) - getGoalProgress(a);
+    }
+
+    if (sortMode === 'progressLow') {
+      return getGoalProgress(a) - getGoalProgress(b);
+    }
+
+    if (sortMode === 'remainingHigh') {
+      return getRemaining(b) - getRemaining(a);
+    }
+
+    if (sortMode === 'remainingLow') {
+      return getRemaining(a) - getRemaining(b);
+    }
+
+    return a.name.localeCompare(b.name);
   });
+
+  const sortLabel =
+    sortMode === 'progressHigh'
+      ? 'Progress High to Low'
+      : sortMode === 'progressLow'
+        ? 'Progress Low to High'
+        : sortMode === 'remainingHigh'
+          ? 'Most Left to Save'
+          : sortMode === 'remainingLow'
+            ? 'Least Left to Save'
+            : 'Name A to Z';
+
+  const handleCycleSort = () => {
+    if (sortMode === 'progressHigh') setSortMode('progressLow');
+    else if (sortMode === 'progressLow') setSortMode('remainingHigh');
+    else if (sortMode === 'remainingHigh') setSortMode('remainingLow');
+    else if (sortMode === 'remainingLow') setSortMode('name');
+    else setSortMode('progressHigh');
+  };
 
   const handleSaveGoal = (envelopeId: string) => {
     const goalAmount = Number(goalAmountInput);
@@ -197,9 +239,10 @@ export default function GoalsScreen() {
       <TouchableOpacity
         style={[styles.sortPill, { backgroundColor: theme.card }]}
         activeOpacity={0.8}
+        onPress={handleCycleSort}
       >
         <Text style={[styles.sortText, { color: theme.text }]}>
-          Sort: Progress (High to Low)⌄
+          Sort: {sortLabel} ⌄
         </Text>
       </TouchableOpacity>
 

@@ -1,7 +1,7 @@
 import { formatCurrency } from '@/constants/currency';
 import { getTheme } from '@/constants/theme';
 import { Envelope, useStashStore } from '@/store/store';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DraggableFlatList, {
   RenderItemParams,
@@ -25,6 +25,10 @@ export default function HomeScreen() {
   const currency = useStashStore((state) => state.currency);
 
   const theme = getTheme(themeColor, themeMode);
+
+  if (accounts.length === 0 && envelopes.length === 0) {
+    return <Redirect href="/onboarding" />;
+  }
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const stuffedTotal = envelopes.reduce((sum, envelope) => sum + envelope.balance, 0);
@@ -65,7 +69,9 @@ export default function HomeScreen() {
 
         <View style={styles.envelopeInfo}>
           <View style={styles.nameRow}>
-            <Text style={[styles.envelopeName, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.envelopeName, { color: theme.text }]}>
+              {item.name}
+            </Text>
 
             {goalComplete && (
               <View style={[styles.completeBadge, { backgroundColor: envelopeColor }]}>
@@ -146,9 +152,15 @@ export default function HomeScreen() {
             ]}
             onPress={() => router.push('/activity')}
           >
-            <Text style={[styles.label, { color: themeMode === 'dark' ? theme.text : '#111111' }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: themeMode === 'dark' ? theme.text : '#111111' },
+              ]}
+            >
               STASH BALANCE
             </Text>
+
             <Text
               style={[
                 styles.totalBalance,
@@ -164,11 +176,15 @@ export default function HomeScreen() {
                   styles.summaryBox,
                   {
                     backgroundColor:
-                      themeMode === 'dark' ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)',
+                      themeMode === 'dark'
+                        ? 'rgba(255,255,255,0.10)'
+                        : 'rgba(255,255,255,0.65)',
                   },
                 ]}
               >
-                <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Stuffed</Text>
+                <Text style={[styles.summaryLabel, { color: theme.subtext }]}>
+                  Stuffed
+                </Text>
                 <Text style={[styles.summaryAmount, { color: theme.text }]}>
                   {formatCurrency(stuffedTotal, currency)}
                 </Text>
@@ -179,11 +195,15 @@ export default function HomeScreen() {
                   styles.summaryBox,
                   {
                     backgroundColor:
-                      themeMode === 'dark' ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)',
+                      themeMode === 'dark'
+                        ? 'rgba(255,255,255,0.10)'
+                        : 'rgba(255,255,255,0.65)',
                   },
                 ]}
               >
-                <Text style={[styles.summaryLabel, { color: theme.subtext }]}>Available</Text>
+                <Text style={[styles.summaryLabel, { color: theme.subtext }]}>
+                  Available
+                </Text>
                 <Text style={[styles.summaryAmount, { color: theme.text }]}>
                   {formatCurrency(availableToStuff, currency)}
                 </Text>
@@ -211,7 +231,10 @@ export default function HomeScreen() {
 
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Envelopes</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Envelopes
+              </Text>
+
               {envelopes.length > 1 && (
                 <Text style={[styles.sortHint, { color: theme.subtext }]}>
                   Hold ☰ to reorder
@@ -220,13 +243,17 @@ export default function HomeScreen() {
             </View>
 
             <TouchableOpacity onPress={() => router.push('/activity')}>
-              <Text style={[styles.viewActivity, { color: theme.accent }]}>Activity</Text>
+              <Text style={[styles.viewActivity, { color: theme.accent }]}>
+                Activity
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {envelopes.length === 0 && (
+          {envelopes.length === 0 && accounts.length > 0 && (
             <View style={[styles.emptyCard, { backgroundColor: theme.soft }]}>
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>No envelopes yet</Text>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No envelopes yet
+              </Text>
               <Text style={[styles.emptyText, { color: theme.subtext }]}>
                 Create your first envelope to start organizing your money.
               </Text>
@@ -310,7 +337,12 @@ const styles = StyleSheet.create({
   envelopeInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   envelopeName: { fontSize: 18, fontWeight: '800', marginRight: 8 },
-  completeBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, marginTop: 4 },
+  completeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    marginTop: 4,
+  },
   completeBadgeText: { fontSize: 12, fontWeight: '900', color: '#111111' },
   envelopeBalance: { fontSize: 24, fontWeight: '900', marginTop: 4 },
   goalSection: { marginTop: 10 },
